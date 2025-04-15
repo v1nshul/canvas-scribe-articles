@@ -1,5 +1,6 @@
+
 import React, { useState, useRef, useEffect } from "react";
-import { Article } from "@/types";
+import { Article, Highlight } from "@/types";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 
@@ -13,6 +14,7 @@ interface ArticleCardProps {
 const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const cardRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   
@@ -157,7 +159,7 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardPro
       });
       
       // Create a new highlight object for our state
-      const newHighlight: Highlight = {
+      const newHighlight = {
         id: `highlight_${Date.now()}`,
         text: highlightedText,
         color: "yellow",
@@ -168,7 +170,7 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardPro
       };
       
       // Add the highlight to the article (for state tracking)
-      const updatedHighlights = [...(article.highlights || []), newHighlight];
+      const updatedHighlights = article.highlights ? [...article.highlights, newHighlight] : [newHighlight];
       onUpdate({
         ...article,
         highlights: updatedHighlights

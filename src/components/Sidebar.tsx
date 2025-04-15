@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Article } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "@/components/ui/sonner";
 
 interface SidebarProps {
   articles: Article[];
@@ -13,14 +14,47 @@ interface SidebarProps {
 const Sidebar = ({ articles, onAddArticle, onDeleteArticle }: SidebarProps) => {
   const [newArticleUrl, setNewArticleUrl] = useState("");
   const [isFormVisible, setIsFormVisible] = useState(false);
+  const [isValidUrl, setIsValidUrl] = useState(true);
+
+  const validateUrl = (url: string): boolean => {
+    try {
+      // Check if URL is valid
+      const parsedUrl = new URL(url);
+      return parsedUrl.protocol === 'http:' || parsedUrl.protocol === 'https:';
+    } catch (e) {
+      return false;
+    }
+  };
+
+  const handleUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const url = e.target.value;
+    setNewArticleUrl(url);
+    
+    // Only validate if there's a value
+    if (url.trim()) {
+      setIsValidUrl(validateUrl(url));
+    } else {
+      setIsValidUrl(true); // Reset validation state when empty
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (newArticleUrl.trim()) {
-      onAddArticle(newArticleUrl);
-      setNewArticleUrl("");
-      setIsFormVisible(false);
+    
+    if (!newArticleUrl.trim()) {
+      toast.error("Please enter a URL");
+      return;
     }
+    
+    if (!validateUrl(newArticleUrl)) {
+      toast.error("Please enter a valid URL (e.g., https://example.com)");
+      return;
+    }
+    
+    onAddArticle(newArticleUrl);
+    setNewArticleUrl("");
+    setIsFormVisible(false);
+    setIsValidUrl(true);
   };
 
   return (
@@ -38,20 +72,37 @@ const Sidebar = ({ articles, onAddArticle, onDeleteArticle }: SidebarProps) => {
       ) : (
         <form onSubmit={handleSubmit} className="mb-4">
           <div className="flex flex-col gap-2">
-            <Input
-              type="url"
-              placeholder="Enter article URL"
-              value={newArticleUrl}
-              onChange={(e) => setNewArticleUrl(e.target.value)}
-              required
-              className="flex-1"
-            />
+            <div>
+              <Input
+                type="url"
+                placeholder="Enter article URL"
+                value={newArticleUrl}
+                onChange={handleUrlChange}
+                required
+                className={`flex-1 ${!isValidUrl ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+              />
+              {!isValidUrl && (
+                <p className="text-red-500 text-xs mt-1">
+                  Please enter a valid URL (e.g., https://example.com)
+                </p>
+              )}
+            </div>
             <div className="flex gap-2">
-              <Button type="submit" className="flex-1">Add</Button>
+              <Button 
+                type="submit" 
+                className="flex-1"
+                disabled={!isValidUrl}
+              >
+                Add
+              </Button>
               <Button 
                 type="button" 
                 variant="outline" 
-                onClick={() => setIsFormVisible(false)}
+                onClick={() => {
+                  setIsFormVisible(false);
+                  setNewArticleUrl("");
+                  setIsValidUrl(true);
+                }}
                 className="flex-1"
               >
                 Cancel
