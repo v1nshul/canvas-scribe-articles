@@ -1,7 +1,7 @@
-
 import React, { useState, useRef, useEffect } from "react";
-import { Article, Highlight, Note } from "@/types";
+import { Article } from "@/types";
 import { Button } from "@/components/ui/button";
+import { X } from "lucide-react";
 
 interface ArticleCardProps {
   article: Article;
@@ -13,26 +13,51 @@ interface ArticleCardProps {
 const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const cardRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   
-  // Handle dragging
+  // Handle dragging - Updated to follow mouse pointer directly
   const handleMouseDown = (e: React.MouseEvent) => {
     if (activeTool !== "move") return;
     
     e.preventDefault();
     setIsDragging(true);
-    
-    const rect = cardRef.current?.getBoundingClientRect();
-    if (rect) {
-      setDragOffset({
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
-      });
-    }
   };
   
+  // Handle mouse movement for dragging
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      
+      // Get card dimensions
+      const card = cardRef.current;
+      if (!card) return;
+      
+      // Calculate new position based on mouse position
+      const newX = Math.round((e.clientX - card.offsetWidth / 2) / 20) * 20;
+      const newY = Math.round((e.clientY - 20) / 20) * 20; // Offset for header height
+      
+      onUpdate({
+        ...article,
+        position: { x: newX, y: newY }
+      });
+    };
+    
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+    
+    if (isDragging) {
+      document.addEventListener("mousemove", handleMouseMove);
+      document.addEventListener("mouseup", handleMouseUp);
+    }
+    
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDragging, article, onUpdate]);
+
   // Handle resizing
   const handleResizeMouseDown = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -173,65 +198,67 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardPro
     const noteX = e.clientX - rect.left;
     const noteY = e.clientY - rect.top;
     
-    // Create a new note
-    const newNote: Note = {
-      id: `note_${Date.now()}`,
-      text: "Click to edit this note",
-      color: "yellow",
-      position: {
-        x: noteX,
-        y: noteY
-      }
+    const noteElement = document.createElement('div');
+    noteElement.className = 'sticky-note group';
+    noteElement.style.cssText = `
+      position: absolute;
+      left: ${noteX}px;
+      top: ${noteY}px;
+      z-index: 5;
+      width: 150px;
+      min-height: 75px;
+      padding: 8px;
+      background-color: #fff59d;
+      border: 1px solid #ffeb3b;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border-radius: 4px;
+      font-size: 0.875rem;
+    `;
+    
+    // Add delete button
+    const deleteButton = document.createElement('button');
+    deleteButton.innerHTML = '✕';
+    deleteButton.className = 'absolute top-1 right-1 opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-500';
+    deleteButton.style.cssText = `
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 2px;
+      font-size: 12px;
+    `;
+    
+    deleteButton.onclick = (e) => {
+      e.stopPropagation();
+      noteElement.remove();
     };
     
-    // Add the note to the article
-    const updatedNotes = [...(article.notes || []), newNote];
-    onUpdate({
-      ...article,
-      notes: updatedNotes
-    });
+    noteElement.appendChild(deleteButton);
     
-    // Create the note element directly
-    const noteElement = document.createElement('div');
-    noteElement.className = 'sticky-note sticky-note-yellow';
-    noteElement.style.position = 'absolute';
-    noteElement.style.left = `${noteX}px`;
-    noteElement.style.top = `${noteY}px`;
-    noteElement.style.zIndex = '5';
-    noteElement.style.width = '150px';
-    noteElement.style.minHeight = '75px';
-    noteElement.style.padding = '8px';
-    noteElement.style.backgroundColor = '#fff59d';
-    noteElement.style.border = '1px solid #ffeb3b';
-    noteElement.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)';
-    noteElement.style.borderRadius = '4px';
-    noteElement.style.fontSize = '0.875rem';
-    noteElement.contentEditable = 'true';
-    noteElement.textContent = "Click to edit this note";
+    const noteContent = document.createElement('div');
+    noteContent.contentEditable = 'true';
+    noteContent.textContent = "Click to edit";
+    noteContent.style.marginTop = '15px';
     
-    // Add it to the article content
+    noteElement.appendChild(noteContent);
     contentRef.current.appendChild(noteElement);
     
-    // Make it draggable without relying on activeTool
+    // Make note draggable
     let isDragging = false;
-    let offsetX = 0;
-    let offsetY = 0;
+    let startX: number;
+    let startY: number;
     
-    noteElement.addEventListener('mousedown', (e: MouseEvent) => {
-      // Make notes always draggable regardless of the current tool
+    noteElement.onmousedown = (e) => {
+      if (e.target !== noteElement) return;
       isDragging = true;
-      offsetX = e.clientX - noteElement.getBoundingClientRect().left;
-      offsetY = e.clientY - noteElement.getBoundingClientRect().top;
+      startX = e.clientX - noteElement.offsetLeft;
+      startY = e.clientY - noteElement.offsetTop;
       e.stopPropagation();
-    });
+    };
     
     document.addEventListener('mousemove', (e) => {
-      if (isDragging) {
-        const newX = e.clientX - offsetX - contentRef.current!.getBoundingClientRect().left;
-        const newY = e.clientY - offsetY - contentRef.current!.getBoundingClientRect().top;
-        noteElement.style.left = `${newX}px`;
-        noteElement.style.top = `${newY}px`;
-      }
+      if (!isDragging) return;
+      noteElement.style.left = `${e.clientX - startX}px`;
+      noteElement.style.top = `${e.clientY - startY}px`;
     });
     
     document.addEventListener('mouseup', () => {
@@ -310,8 +337,6 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardPro
               No content available
             </div>
           )}
-          
-          {/* Notes are now created dynamically and don't need to be rendered here */}
         </div>
       )}
       

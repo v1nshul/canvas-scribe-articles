@@ -1,4 +1,3 @@
-
 export interface Article {
   id: string;
   url: string;
@@ -14,6 +13,7 @@ export interface Article {
   };
   minimized: boolean;
   isLoading: boolean;
+  error?: string;
   highlights?: Highlight[];
   notes?: Note[];
 }
