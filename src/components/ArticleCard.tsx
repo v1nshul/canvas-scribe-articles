@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from "react";
-import { Article, Highlight } from "@/types";
+import { Article, Highlight, Tool } from "@/types";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 
@@ -8,7 +8,7 @@ interface ArticleCardProps {
   article: Article;
   onUpdate: (article: Article) => void;
   onDelete: (id: string) => void;
-  activeTool: "move" | "pan" | "highlight" | "note" | "select";
+  activeTool: Tool;
 }
 
 const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardProps) => {
@@ -237,6 +237,7 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardPro
     let startY: number;
     
     noteElement.onmousedown = (e) => {
+      // Fix: Correct comparison with the Tool type
       if (activeTool !== "select" && activeTool !== "note") return;
       if (e.target === deleteButton || e.target === noteContent) return;
       
