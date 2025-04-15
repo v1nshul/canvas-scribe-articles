@@ -1,0 +1,114 @@
+
+import { useState } from "react";
+import { Article } from "@/types";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+
+interface SidebarProps {
+  articles: Article[];
+  onAddArticle: (url: string) => void;
+  onDeleteArticle: (id: string) => void;
+}
+
+const Sidebar = ({ articles, onAddArticle, onDeleteArticle }: SidebarProps) => {
+  const [newArticleUrl, setNewArticleUrl] = useState("");
+  const [isFormVisible, setIsFormVisible] = useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newArticleUrl.trim()) {
+      onAddArticle(newArticleUrl);
+      setNewArticleUrl("");
+      setIsFormVisible(false);
+    }
+  };
+
+  return (
+    <div className="w-80 border-r border-gray-200 p-4 flex flex-col h-full bg-white">
+      <h2 className="text-xl font-bold mb-4">Articles</h2>
+      
+      {/* Add New Article Button */}
+      {!isFormVisible ? (
+        <Button 
+          onClick={() => setIsFormVisible(true)} 
+          className="mb-4 w-full"
+        >
+          <span className="mr-2 text-sm">+</span> Add Article
+        </Button>
+      ) : (
+        <form onSubmit={handleSubmit} className="mb-4">
+          <div className="flex flex-col gap-2">
+            <Input
+              type="url"
+              placeholder="Enter article URL"
+              value={newArticleUrl}
+              onChange={(e) => setNewArticleUrl(e.target.value)}
+              required
+              className="flex-1"
+            />
+            <div className="flex gap-2">
+              <Button type="submit" className="flex-1">Add</Button>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={() => setIsFormVisible(false)}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </form>
+      )}
+      
+      {/* Article List */}
+      <div className="overflow-y-auto flex-1">
+        {articles.length === 0 ? (
+          <div className="text-center text-gray-500 py-8">
+            No articles added yet. Add an article to get started.
+          </div>
+        ) : (
+          <ul className="space-y-2">
+            {articles.map((article) => (
+              <li 
+                key={article.id}
+                className="p-3 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex justify-between items-start">
+                  <div className="flex-1 mr-2">
+                    <h3 className="font-medium line-clamp-1" title={article.title}>
+                      {article.isLoading ? "Loading..." : article.title}
+                    </h3>
+                    <p className="text-xs text-gray-500 truncate" title={article.url}>
+                      {article.url}
+                    </p>
+                  </div>
+                  <div className="flex space-x-1">
+                    <Button 
+                      size="icon" 
+                      variant="ghost" 
+                      className="h-6 w-6" 
+                      onClick={() => window.open(article.url, "_blank")}
+                    >
+                      <span className="text-sm">↗</span>
+                    </Button>
+                    <Button 
+                      size="icon" 
+                      variant="ghost" 
+                      className="h-6 w-6 text-red-500 hover:text-red-700" 
+                      onClick={() => onDeleteArticle(article.id)}
+                    >
+                      <span className="text-sm">🗑</span>
+                    </Button>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  );
+};
+
+export default Sidebar;
