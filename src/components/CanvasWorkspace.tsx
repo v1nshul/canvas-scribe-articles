@@ -88,7 +88,13 @@ const CanvasWorkspace = ({
       ref={canvasRef}
       className="flex-1 overflow-hidden relative bg-gray-50"
       onMouseDown={handleMouseDown}
-      style={{ cursor: activeTool === "pan" ? "grab" : "default" }}
+      style={{ 
+        cursor: activeTool === "pan" ? "grab" : 
+                activeTool === "select" ? "pointer" :
+                activeTool === "move" ? "move" :
+                activeTool === "highlight" ? "text" :
+                activeTool === "note" ? "crosshair" : "default"
+      }}
     >
       {/* Grid Background */}
       <div 

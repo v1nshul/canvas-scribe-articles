@@ -1,3 +1,4 @@
+
 import { useState, useRef, useEffect } from "react";
 import CanvasWorkspace from "@/components/CanvasWorkspace";
 import Sidebar from "@/components/Sidebar";
@@ -7,7 +8,7 @@ import { toast } from "@/components/ui/sonner";
 
 const Index = () => {
   const [articles, setArticles] = useState<Article[]>([]);
-  const [activeTool, setActiveTool] = useState<"move" | "pan" | "highlight" | "note">("move");
+  const [activeTool, setActiveTool] = useState<"move" | "pan" | "highlight" | "note" | "select">("move");
   
   const addArticle = async (url: string) => {
     const newArticle: Article = {
@@ -27,15 +28,40 @@ const Index = () => {
     setArticles(prev => [...prev, newArticle]);
     
     try {
-      const response = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
+      // Use a more reliable CORS proxy with better error handling
+      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
+      const response = await fetch(proxyUrl);
+      
+      if (!response.ok) {
+        throw new Error(`Failed to fetch article: ${response.status} ${response.statusText}`);
+      }
+      
       const html = await response.text();
       
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, 'text/html');
       
       const title = doc.querySelector('title')?.textContent || url;
-      const content = doc.querySelector('article, main, .article, .content')?.innerHTML || 
-                     doc.body.innerHTML;
+      
+      // Try multiple selectors for content to improve success rate
+      const contentSelectors = [
+        'article', 'main', '.article', '.content', '#content', '.post-content',
+        '[role="main"]', '.entry-content', '.post-body', '.story'
+      ];
+      
+      let content = '';
+      for (const selector of contentSelectors) {
+        const element = doc.querySelector(selector);
+        if (element && element.innerHTML.trim()) {
+          content = element.innerHTML;
+          break;
+        }
+      }
+      
+      // If no content was found with selectors, use the body
+      if (!content.trim()) {
+        content = doc.body.innerHTML;
+      }
       
       setArticles(prev => prev.map(article => 
         article.id === newArticle.id 
@@ -44,7 +70,7 @@ const Index = () => {
       ));
     } catch (error) {
       console.error('Error fetching article:', error);
-      toast.error("Failed to load article");
+      toast.error(`Failed to load article: ${error instanceof Error ? error.message : 'Unknown error'}`);
       
       setArticles(prev => prev.map(article => 
         article.id === newArticle.id 

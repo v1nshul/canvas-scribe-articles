@@ -8,7 +8,7 @@ interface ArticleCardProps {
   article: Article;
   onUpdate: (article: Article) => void;
   onDelete: (id: string) => void;
-  activeTool: "move" | "pan" | "highlight" | "note";
+  activeTool: "move" | "pan" | "highlight" | "note" | "select";
 }
 
 const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardProps) => {
@@ -23,6 +23,9 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardPro
     if (activeTool !== "move") return;
     
     e.preventDefault();
+    e.stopPropagation();
+    
+    // Set dragging state
     setIsDragging(true);
   };
   
@@ -31,13 +34,9 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardPro
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragging) return;
       
-      // Get card dimensions
-      const card = cardRef.current;
-      if (!card) return;
-      
       // Calculate new position based on mouse position
-      const newX = Math.round((e.clientX - card.offsetWidth / 2) / 20) * 20;
-      const newY = Math.round((e.clientY - 20) / 20) * 20; // Offset for header height
+      const newX = Math.round((e.clientX - 200) / 20) * 20; // 200 is half the article width
+      const newY = Math.round((e.clientY - 40) / 20) * 20; // 40 accounts for header height
       
       onUpdate({
         ...article,
@@ -75,23 +74,10 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardPro
     }
   };
   
-  // Update position or size on mouse move
+  // Update size on mouse move during resize
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (isDragging) {
-        // Calculate new position
-        const newX = e.clientX - dragOffset.x;
-        const newY = e.clientY - dragOffset.y;
-        
-        // Snap to grid (20px)
-        const snappedX = Math.round(newX / 20) * 20;
-        const snappedY = Math.round(newY / 20) * 20;
-        
-        onUpdate({
-          ...article,
-          position: { x: snappedX, y: snappedY }
-        });
-      } else if (isResizing) {
+      if (isResizing) {
         // Calculate new width
         const newWidth = dragOffset.y + (e.clientX - dragOffset.x);
         // Snap to grid (20px)
@@ -105,11 +91,10 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardPro
     };
     
     const handleMouseUp = () => {
-      setIsDragging(false);
       setIsResizing(false);
     };
     
-    if (isDragging || isResizing) {
+    if (isResizing) {
       document.addEventListener("mousemove", handleMouseMove);
       document.addEventListener("mouseup", handleMouseUp);
     }
@@ -118,7 +103,7 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardPro
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isDragging, isResizing, dragOffset, article, onUpdate]);
+  }, [isResizing, dragOffset, article, onUpdate]);
   
   // Toggle minimized state
   const toggleMinimized = () => {
@@ -200,7 +185,9 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardPro
     const noteX = e.clientX - rect.left;
     const noteY = e.clientY - rect.top;
     
+    const noteId = `note_${Date.now()}`;
     const noteElement = document.createElement('div');
+    noteElement.id = noteId;
     noteElement.className = 'sticky-note group';
     noteElement.style.cssText = `
       position: absolute;
@@ -220,7 +207,7 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardPro
     // Add delete button
     const deleteButton = document.createElement('button');
     deleteButton.innerHTML = '✕';
-    deleteButton.className = 'absolute top-1 right-1 opacity-0 group-hover:opacity-100 text-gray-600 hover:text-red-500';
+    deleteButton.className = 'absolute top-1 right-1 opacity-100 text-gray-600 hover:text-red-500';
     deleteButton.style.cssText = `
       background: none;
       border: none;
@@ -244,27 +231,41 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardPro
     noteElement.appendChild(noteContent);
     contentRef.current.appendChild(noteElement);
     
-    // Make note draggable
-    let isDragging = false;
+    // Make note draggable only when using select tool or note tool
+    let isNoteDragging = false;
     let startX: number;
     let startY: number;
     
     noteElement.onmousedown = (e) => {
-      if (e.target !== noteElement) return;
-      isDragging = true;
+      if (activeTool !== "select" && activeTool !== "note") return;
+      if (e.target === deleteButton || e.target === noteContent) return;
+      
+      isNoteDragging = true;
       startX = e.clientX - noteElement.offsetLeft;
       startY = e.clientY - noteElement.offsetTop;
       e.stopPropagation();
+      
+      // Prevent note from detaching during drag
+      e.preventDefault();
     };
     
-    document.addEventListener('mousemove', (e) => {
-      if (!isDragging) return;
+    const noteMoveHandler = (e: MouseEvent) => {
+      if (!isNoteDragging) return;
       noteElement.style.left = `${e.clientX - startX}px`;
       noteElement.style.top = `${e.clientY - startY}px`;
-    });
+    };
     
-    document.addEventListener('mouseup', () => {
-      isDragging = false;
+    const noteUpHandler = () => {
+      isNoteDragging = false;
+    };
+    
+    // Attach the event listeners directly to the document
+    document.addEventListener('mousemove', noteMoveHandler);
+    document.addEventListener('mouseup', noteUpHandler);
+    
+    // Ensure note content doesn't trigger card dragging
+    noteContent.addEventListener('mousedown', (e) => {
+      e.stopPropagation();
     });
   };
   

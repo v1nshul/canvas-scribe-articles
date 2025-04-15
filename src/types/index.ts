@@ -1,3 +1,4 @@
+
 export interface Article {
   id: string;
   url: string;
@@ -38,4 +39,4 @@ export interface Note {
   };
 }
 
-export type Tool = "move" | "pan" | "highlight" | "note";
+export type Tool = "move" | "pan" | "highlight" | "note" | "select";
