@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Article, Tool } from "@/types";
+import { Article, Tool, Note } from "@/types";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 
@@ -14,10 +14,10 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardPro
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState<false | "e" | "se">(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   
-  // Handle dragging with proper mouse offset tracking
   const handleHeaderMouseDown = (e: React.MouseEvent) => {
     if (activeTool !== "move") return;
     if (!cardRef.current) return;
@@ -33,7 +33,6 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardPro
     setIsDragging(true);
   };
   
-  // Mouse move handler for dragging
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isDragging || !cardRef.current) return;
@@ -41,7 +40,6 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardPro
       const parentRect = cardRef.current.parentElement?.getBoundingClientRect();
       if (!parentRect) return;
       
-      // Calculate new position based on mouse position minus the drag offset
       const newX = e.clientX - parentRect.left - dragStart.x;
       const newY = e.clientY - parentRect.top - dragStart.y;
       
@@ -66,14 +64,12 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardPro
     };
   }, [isDragging, dragStart, article, onUpdate]);
 
-  // Handle resizing - support both right edge and bottom-right corner
   const handleResizeMouseDown = (e: React.MouseEvent, type: "e" | "se") => {
     e.preventDefault();
     e.stopPropagation();
     setIsResizing(type);
   };
   
-  // Mouse move handler for resizing
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (!isResizing || !cardRef.current) return;
@@ -81,7 +77,6 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardPro
       const rect = cardRef.current.getBoundingClientRect();
       
       if (isResizing === "e" || isResizing === "se") {
-        // Horizontal resize
         const newWidth = Math.max(250, e.clientX - rect.left);
         onUpdate({
           ...article,
@@ -90,7 +85,6 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardPro
       }
       
       if (isResizing === "se") {
-        // Vertical resize
         const newHeight = Math.max(200, e.clientY - rect.top);
         onUpdate({
           ...article,
@@ -114,7 +108,6 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardPro
     };
   }, [isResizing, article, onUpdate]);
 
-  // Toggle minimized state
   const toggleMinimized = () => {
     onUpdate({
       ...article,
@@ -122,10 +115,47 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardPro
     });
   };
 
+  const addNote = (e: React.MouseEvent) => {
+    if (activeTool !== "note" || !contentRef.current) return;
+    
+    const rect = contentRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    
+    const newNote: Note = {
+      id: `note_${Date.now()}`,
+      articleId: article.id,
+      text: "Click to edit note...",
+      position: { x, y },
+      createdAt: Date.now()
+    };
+    
+    onUpdate({
+      ...article,
+      notes: [...article.notes, newNote]
+    });
+  };
+
+  const updateNote = (noteId: string, text: string) => {
+    onUpdate({
+      ...article,
+      notes: article.notes.map(note =>
+        note.id === noteId ? { ...note, text } : note
+      )
+    });
+  };
+
+  const deleteNote = (noteId: string) => {
+    onUpdate({
+      ...article,
+      notes: article.notes.filter(note => note.id !== noteId)
+    });
+  };
+
   return (
     <div
       ref={cardRef}
-      className={`absolute bg-white border border-gray-300 rounded-lg shadow-lg overflow-hidden flex flex-col transition-shadow ${
+      className={`absolute bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded-lg shadow-lg overflow-hidden flex flex-col transition-shadow ${
         isDragging || isResizing ? "shadow-2xl border-blue-400" : "hover:shadow-xl"
       }`}
       style={{
@@ -137,9 +167,8 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardPro
         cursor: activeTool === "move" ? "move" : "default"
       }}
     >
-      {/* Header - Draggable */}
       <div
-        className="bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-3 flex items-center gap-2 cursor-move hover:from-blue-600 hover:to-blue-700 transition-all flex-shrink-0"
+        className="bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-700 dark:to-blue-800 px-4 py-3 flex items-center gap-2 cursor-move hover:from-blue-600 hover:to-blue-700 transition-all flex-shrink-0"
         onMouseDown={handleHeaderMouseDown}
       >
         <div className="flex-1 min-w-0">
@@ -186,11 +215,11 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardPro
         </div>
       </div>
 
-      {/* Content */}
       {!article.minimized && (
         <div
           ref={contentRef}
-          className="flex-1 overflow-y-auto p-4 text-sm leading-relaxed"
+          className="flex-1 overflow-y-auto p-4 text-sm leading-relaxed relative bg-white dark:bg-slate-900"
+          onClick={addNote}
           style={{
             minHeight: "200px"
           }}
@@ -199,38 +228,74 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardPro
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
                 <div className="inline-block w-8 h-8 border-3 border-blue-200 border-t-blue-500 rounded-full animate-spin mb-2" />
-                <p className="text-gray-500">Loading article...</p>
+                <p className="text-gray-500 dark:text-gray-400">Loading article...</p>
               </div>
             </div>
           ) : article.error ? (
-            <div className="text-red-500 text-center p-4 bg-red-50 rounded">
+            <div className="text-red-500 dark:text-red-400 text-center p-4 bg-red-50 dark:bg-red-900 dark:bg-opacity-20 rounded">
               <p className="font-semibold">Error</p>
               <p className="text-xs">{article.error}</p>
             </div>
           ) : article.content ? (
             <div
-              className="prose prose-sm max-w-full"
+              className="prose prose-sm max-w-full dark:prose-invert"
               dangerouslySetInnerHTML={{ __html: article.content }}
             />
           ) : (
-            <div className="text-gray-400 text-center">
+            <div className="text-gray-400 dark:text-gray-500 text-center">
               No content available
             </div>
           )}
+
+          {article.notes.map(note => (
+            <div
+              key={note.id}
+              className="absolute bg-yellow-200 dark:bg-yellow-700 border-2 border-yellow-400 dark:border-yellow-600 rounded-lg p-3 shadow-md max-w-xs"
+              style={{
+                left: `${note.position.x}px`,
+                top: `${note.position.y}px`,
+                zIndex: 20,
+                minWidth: "140px"
+              }}
+            >
+              <div className="flex justify-between items-start gap-2 mb-2">
+                <span className="text-xs font-semibold text-gray-700 dark:text-gray-900">Note</span>
+                <button
+                  onClick={() => deleteNote(note.id)}
+                  className="text-gray-600 dark:text-gray-900 hover:text-red-600 dark:hover:text-red-500 text-sm"
+                >
+                  ✕
+                </button>
+              </div>
+              {editingNoteId === note.id ? (
+                <textarea
+                  value={note.text}
+                  onChange={(e) => updateNote(note.id, e.target.value)}
+                  onBlur={() => setEditingNoteId(null)}
+                  className="w-full text-xs p-1 border border-yellow-400 dark:border-yellow-600 rounded bg-yellow-50 dark:bg-yellow-800 text-gray-900 dark:text-white focus:outline-none"
+                  autoFocus
+                />
+              ) : (
+                <p
+                  onClick={() => setEditingNoteId(note.id)}
+                  className="text-xs text-gray-800 dark:text-gray-900 cursor-pointer hover:bg-yellow-300 dark:hover:bg-yellow-600 p-1 rounded"
+                >
+                  {note.text}
+                </p>
+              )}
+            </div>
+          ))}
         </div>
       )}
 
-      {/* Resize Handles */}
       {!article.minimized && (
         <>
-          {/* Right edge resize */}
           <div
             className="absolute top-0 right-0 w-1 h-full cursor-ew-resize hover:bg-blue-400 hover:w-2 transition-all"
             onMouseDown={(e) => handleResizeMouseDown(e, "e")}
             title="Drag to resize width"
           />
           
-          {/* Bottom-right corner resize */}
           <div
             className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize hover:bg-blue-400 transition-all"
             onMouseDown={(e) => handleResizeMouseDown(e, "se")}

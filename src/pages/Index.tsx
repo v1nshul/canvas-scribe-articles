@@ -9,7 +9,7 @@ import { fetchArticleContent } from "@/lib/content-fetcher";
 
 const Index = () => {
   const [articles, setArticles] = useState<Article[]>([]);
-  const [activeTool, setActiveTool] = useState<"move" | "pan" | "highlight" | "note" | "select">("move");
+  const [activeTool, setActiveTool] = useState<"move" | "pan" | "highlight" | "note" | "select" | "container">("move");
   const [isLoading, setIsLoading] = useState(true);
 
   // Load articles from localStorage on mount
@@ -105,17 +105,17 @@ const Index = () => {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="flex h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-950 dark:to-slate-900">
         <div className="text-center">
-          <div className="inline-block w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4" />
-          <p className="text-gray-700 font-medium">Loading your workspace...</p>
+          <div className="inline-block w-12 h-12 border-4 border-blue-200 border-t-blue-600 dark:border-blue-800 dark:border-t-blue-500 rounded-full animate-spin mb-4" />
+          <p className="text-gray-700 dark:text-gray-300 font-medium">Loading your workspace...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-slate-900">
       <Sidebar
         articles={articles}
         onAddArticle={addArticle}

@@ -58,12 +58,12 @@ const Sidebar = ({ articles, onAddArticle, onDeleteArticle }: SidebarProps) => {
   };
 
   return (
-    <div className="w-80 border-r border-gray-200 p-4 flex flex-col h-full bg-white">
+    <div className="w-80 border-r border-gray-200 dark:border-slate-700 p-4 flex flex-col h-full bg-white dark:bg-slate-800">
       <div className="mb-4">
-        <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
           Articles
         </h2>
-        <p className="text-xs text-gray-500 mt-1">Manage your canvas articles</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Manage your canvas articles</p>
       </div>
       
       {/* Add New Article Button */}
@@ -120,7 +120,7 @@ const Sidebar = ({ articles, onAddArticle, onDeleteArticle }: SidebarProps) => {
       {/* Article List */}
       <div className="overflow-y-auto flex-1">
         {articles.length === 0 ? (
-          <div className="text-center text-gray-500 py-8">
+          <div className="text-center text-gray-500 dark:text-gray-400 py-8">
             No articles added yet. Add an article to get started.
           </div>
         ) : (
@@ -128,14 +128,14 @@ const Sidebar = ({ articles, onAddArticle, onDeleteArticle }: SidebarProps) => {
             {articles.map((article) => (
               <li 
                 key={article.id}
-                className="p-3 border border-gray-200 rounded-md hover:bg-gray-50 transition-colors"
+                className="p-3 border border-gray-200 dark:border-slate-700 rounded-md hover:bg-gray-50 dark:hover:bg-slate-700 dark:bg-slate-900 transition-colors"
               >
                 <div className="flex justify-between items-start">
                   <div className="flex-1 mr-2">
-                    <h3 className="font-medium line-clamp-1" title={article.title}>
+                    <h3 className="font-medium line-clamp-1 dark:text-gray-100" title={article.title}>
                       {article.isLoading ? "Loading..." : article.title}
                     </h3>
-                    <p className="text-xs text-gray-500 truncate" title={article.url}>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 truncate" title={article.url}>
                       {article.url}
                     </p>
                   </div>
@@ -143,7 +143,7 @@ const Sidebar = ({ articles, onAddArticle, onDeleteArticle }: SidebarProps) => {
                     <Button 
                       size="icon" 
                       variant="ghost" 
-                      className="h-6 w-6" 
+                      className="h-6 w-6 dark:text-gray-400 dark:hover:text-white" 
                       onClick={() => window.open(article.url, "_blank")}
                     >
                       <span className="text-sm">↗</span>
@@ -151,7 +151,7 @@ const Sidebar = ({ articles, onAddArticle, onDeleteArticle }: SidebarProps) => {
                     <Button 
                       size="icon" 
                       variant="ghost" 
-                      className="h-6 w-6 text-red-500 hover:text-red-700" 
+                      className="h-6 w-6 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300" 
                       onClick={() => onDeleteArticle(article.id)}
                     >
                       <span className="text-sm">🗑</span>

@@ -28,6 +28,7 @@ export interface Highlight {
 
 export interface Note {
   id: string;
+  articleId: string;
   text: string;
   position: {
     x: number;
@@ -36,4 +37,19 @@ export interface Note {
   createdAt: number;
 }
 
-export type Tool = "move" | "pan" | "highlight" | "note" | "select";
+export interface Container {
+  id: string;
+  label: string;
+  position: {
+    x: number;
+    y: number;
+  };
+  size: {
+    width: number;
+    height: number;
+  };
+  color: string;
+  createdAt: number;
+}
+
+export type Tool = "move" | "pan" | "highlight" | "note" | "select" | "container";
