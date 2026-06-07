@@ -1,15 +1,40 @@
-
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import CanvasWorkspace from "@/components/CanvasWorkspace";
 import Sidebar from "@/components/Sidebar";
 import Toolbar from "@/components/Toolbar";
 import { Article } from "@/types";
 import { toast } from "@/components/ui/sonner";
+import { StorageManager } from "@/lib/storage";
+import { fetchArticleContent } from "@/lib/content-fetcher";
 
 const Index = () => {
   const [articles, setArticles] = useState<Article[]>([]);
   const [activeTool, setActiveTool] = useState<"move" | "pan" | "highlight" | "note" | "select">("move");
-  
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load articles from localStorage on mount
+  useEffect(() => {
+    const loadArticles = () => {
+      try {
+        const saved = StorageManager.load();
+        setArticles(saved);
+      } catch (error) {
+        console.error("Failed to load articles:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadArticles();
+  }, []);
+
+  // Save articles to localStorage whenever they change
+  useEffect(() => {
+    if (!isLoading) {
+      StorageManager.save(articles);
+    }
+  }, [articles, isLoading]);
+
   const addArticle = async (url: string) => {
     const newArticle: Article = {
       id: `article_${Date.now()}`,
@@ -17,92 +42,89 @@ const Index = () => {
       title: "Loading...",
       content: "",
       position: {
-        x: 100 + (articles.length * 40),
-        y: 100 + (articles.length * 40)
+        x: 100 + Math.random() * 40,
+        y: 100 + Math.random() * 40
       },
-      size: { width: 400, height: 600 },
+      size: { width: 500, height: 600 },
       minimized: false,
-      isLoading: true
+      isLoading: true,
+      highlights: [],
+      notes: []
     };
-    
+
     setArticles(prev => [...prev, newArticle]);
-    
+
     try {
-      // Use a more reliable CORS proxy with better error handling
-      const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(url)}`;
-      const response = await fetch(proxyUrl);
-      
-      if (!response.ok) {
-        throw new Error(`Failed to fetch article: ${response.status} ${response.statusText}`);
+      const result = await fetchArticleContent(url);
+
+      if (result.error) {
+        toast.error(`Failed to load article: ${result.error}`);
+      } else {
+        toast.success(`Loaded: ${result.title}`);
       }
-      
-      const html = await response.text();
-      
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
-      
-      const title = doc.querySelector('title')?.textContent || url;
-      
-      // Try multiple selectors for content to improve success rate
-      const contentSelectors = [
-        'article', 'main', '.article', '.content', '#content', '.post-content',
-        '[role="main"]', '.entry-content', '.post-body', '.story'
-      ];
-      
-      let content = '';
-      for (const selector of contentSelectors) {
-        const element = doc.querySelector(selector);
-        if (element && element.innerHTML.trim()) {
-          content = element.innerHTML;
-          break;
-        }
-      }
-      
-      // If no content was found with selectors, use the body
-      if (!content.trim()) {
-        content = doc.body.innerHTML;
-      }
-      
-      setArticles(prev => prev.map(article => 
-        article.id === newArticle.id 
-          ? { ...article, title, content, isLoading: false }
-          : article
-      ));
+
+      setArticles(prev =>
+        prev.map(article =>
+          article.id === newArticle.id
+            ? { 
+                ...article, 
+                title: result.title, 
+                content: result.content, 
+                isLoading: false,
+                error: result.error
+              }
+            : article
+        )
+      );
     } catch (error) {
-      console.error('Error fetching article:', error);
-      toast.error(`Failed to load article: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      
-      setArticles(prev => prev.map(article => 
-        article.id === newArticle.id 
-          ? { ...article, title: "Error loading article", isLoading: false, error: "Failed to load content" }
-          : article
-      ));
+      const errorMsg = error instanceof Error ? error.message : "Unknown error";
+      toast.error(`Error: ${errorMsg}`);
+
+      setArticles(prev =>
+        prev.map(article =>
+          article.id === newArticle.id
+            ? { ...article, title: "Error", isLoading: false, error: errorMsg }
+            : article
+        )
+      );
     }
   };
-  
+
   const updateArticle = (updatedArticle: Article) => {
-    setArticles(prevArticles => 
-      prevArticles.map(article => 
+    setArticles(prevArticles =>
+      prevArticles.map(article =>
         article.id === updatedArticle.id ? updatedArticle : article
       )
     );
   };
-  
+
   const deleteArticle = (id: string) => {
     setArticles(prevArticles => prevArticles.filter(article => article.id !== id));
+    toast.success("Article removed");
   };
-  
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <div className="text-center">
+          <div className="inline-block w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4" />
+          <p className="text-gray-700 font-medium">Loading your workspace...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
-      <Sidebar 
-        articles={articles} 
+      <Sidebar
+        articles={articles}
         onAddArticle={addArticle}
         onDeleteArticle={deleteArticle}
       />
       <div className="flex flex-col flex-1 overflow-hidden">
         <Toolbar activeTool={activeTool} onChangeTool={setActiveTool} />
-        <CanvasWorkspace 
-          articles={articles} 
+        <CanvasWorkspace
+          articles={articles}
           onUpdateArticle={updateArticle}
           onDeleteArticle={deleteArticle}
           activeTool={activeTool}

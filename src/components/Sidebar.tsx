@@ -59,15 +59,20 @@ const Sidebar = ({ articles, onAddArticle, onDeleteArticle }: SidebarProps) => {
 
   return (
     <div className="w-80 border-r border-gray-200 p-4 flex flex-col h-full bg-white">
-      <h2 className="text-xl font-bold mb-4">Articles</h2>
+      <div className="mb-4">
+        <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+          Articles
+        </h2>
+        <p className="text-xs text-gray-500 mt-1">Manage your canvas articles</p>
+      </div>
       
       {/* Add New Article Button */}
       {!isFormVisible ? (
         <Button 
           onClick={() => setIsFormVisible(true)} 
-          className="mb-4 w-full"
+          className="mb-4 w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600"
         >
-          <span className="mr-2 text-sm">+</span> Add Article
+          <span className="mr-2">+</span> Add Article
         </Button>
       ) : (
         <form onSubmit={handleSubmit} className="mb-4">

@@ -1,4 +1,3 @@
-
 export interface Article {
   id: string;
   url: string;
@@ -15,28 +14,26 @@ export interface Article {
   minimized: boolean;
   isLoading: boolean;
   error?: string;
-  highlights?: Highlight[];
-  notes?: Note[];
+  highlights: Highlight[];
+  notes: Note[];
 }
 
 export interface Highlight {
   id: string;
   text: string;
   color: string;
-  position: {
-    start: number;
-    end: number;
-  };
+  startOffset: number;
+  endOffset: number;
 }
 
 export interface Note {
   id: string;
   text: string;
-  color: string;
   position: {
     x: number;
     y: number;
   };
+  createdAt: number;
 }
 
 export type Tool = "move" | "pan" | "highlight" | "note" | "select";

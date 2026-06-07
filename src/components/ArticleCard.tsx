@@ -1,6 +1,5 @@
-
 import React, { useState, useRef, useEffect } from "react";
-import { Article, Highlight, Tool } from "@/types";
+import { Article, Tool } from "@/types";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 
@@ -13,30 +12,38 @@ interface ArticleCardProps {
 
 const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardProps) => {
   const [isDragging, setIsDragging] = useState(false);
-  const [isResizing, setIsResizing] = useState(false);
-  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [isResizing, setIsResizing] = useState<false | "e" | "se">(false);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const cardRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   
-  // Handle dragging - Updated to follow mouse pointer directly
-  const handleMouseDown = (e: React.MouseEvent) => {
+  // Handle dragging with proper mouse offset tracking
+  const handleHeaderMouseDown = (e: React.MouseEvent) => {
     if (activeTool !== "move") return;
+    if (!cardRef.current) return;
     
     e.preventDefault();
     e.stopPropagation();
     
-    // Set dragging state
+    const rect = cardRef.current.getBoundingClientRect();
+    setDragStart({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top
+    });
     setIsDragging(true);
   };
   
-  // Handle mouse movement for dragging
+  // Mouse move handler for dragging
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (!isDragging) return;
+      if (!isDragging || !cardRef.current) return;
       
-      // Calculate new position based on mouse position
-      const newX = Math.round((e.clientX - 200) / 20) * 20; // 200 is half the article width
-      const newY = Math.round((e.clientY - 40) / 20) * 20; // 40 accounts for header height
+      const parentRect = cardRef.current.parentElement?.getBoundingClientRect();
+      if (!parentRect) return;
+      
+      // Calculate new position based on mouse position minus the drag offset
+      const newX = e.clientX - parentRect.left - dragStart.x;
+      const newY = e.clientY - parentRect.top - dragStart.y;
       
       onUpdate({
         ...article,
@@ -57,35 +64,37 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardPro
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isDragging, article, onUpdate]);
+  }, [isDragging, dragStart, article, onUpdate]);
 
-  // Handle resizing
-  const handleResizeMouseDown = (e: React.MouseEvent) => {
+  // Handle resizing - support both right edge and bottom-right corner
+  const handleResizeMouseDown = (e: React.MouseEvent, type: "e" | "se") => {
     e.preventDefault();
     e.stopPropagation();
-    setIsResizing(true);
-    
-    const rect = cardRef.current?.getBoundingClientRect();
-    if (rect) {
-      setDragOffset({
-        x: e.clientX,
-        y: rect.width
-      });
-    }
+    setIsResizing(type);
   };
   
-  // Update size on mouse move during resize
+  // Mouse move handler for resizing
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
-      if (isResizing) {
-        // Calculate new width
-        const newWidth = dragOffset.y + (e.clientX - dragOffset.x);
-        // Snap to grid (20px)
-        const snappedWidth = Math.max(300, Math.round(newWidth / 20) * 20);
-        
+      if (!isResizing || !cardRef.current) return;
+      
+      const rect = cardRef.current.getBoundingClientRect();
+      
+      if (isResizing === "e" || isResizing === "se") {
+        // Horizontal resize
+        const newWidth = Math.max(250, e.clientX - rect.left);
         onUpdate({
           ...article,
-          size: { ...article.size, width: snappedWidth }
+          size: { ...article.size, width: newWidth }
+        });
+      }
+      
+      if (isResizing === "se") {
+        // Vertical resize
+        const newHeight = Math.max(200, e.clientY - rect.top);
+        onUpdate({
+          ...article,
+          size: { ...article.size, height: newHeight }
         });
       }
     };
@@ -103,8 +112,8 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardPro
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isResizing, dragOffset, article, onUpdate]);
-  
+  }, [isResizing, article, onUpdate]);
+
   // Toggle minimized state
   const toggleMinimized = () => {
     onUpdate({
@@ -112,244 +121,125 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardPro
       minimized: !article.minimized
     });
   };
-  
-  // Handle highlighting
-  const handleHighlight = () => {
-    if (activeTool !== "highlight" || !contentRef.current) return;
-    
-    const selection = window.getSelection();
-    if (!selection || selection.isCollapsed || !selection.toString().trim()) return;
-    
-    const range = selection.getRangeAt(0);
-    const highlightedText = selection.toString();
-    
-    try {
-      // Create span element for highlighting
-      const highlightSpan = document.createElement('span');
-      highlightSpan.className = 'highlight';
-      highlightSpan.title = 'Highlighted text';
-      highlightSpan.style.backgroundColor = 'rgba(255, 255, 0, 0.4)';
-      
-      // Replace the selected text with highlighted version
-      range.surroundContents(highlightSpan);
-      
-      // Add remove option on right-click
-      highlightSpan.addEventListener('contextmenu', (e) => {
-        e.preventDefault();
-        if (confirm('Remove this highlight?')) {
-          // Replace the highlight with its text content
-          const textNode = document.createTextNode(highlightSpan.textContent || '');
-          highlightSpan.parentNode?.replaceChild(textNode, highlightSpan);
-        }
-      });
-      
-      // Create a new highlight object for our state
-      const newHighlight = {
-        id: `highlight_${Date.now()}`,
-        text: highlightedText,
-        color: "yellow",
-        position: {
-          start: 0,
-          end: 0
-        }
-      };
-      
-      // Add the highlight to the article (for state tracking)
-      const updatedHighlights = article.highlights ? [...article.highlights, newHighlight] : [newHighlight];
-      onUpdate({
-        ...article,
-        highlights: updatedHighlights
-      });
-      
-      // Visual feedback animation
-      highlightSpan.animate(
-        [
-          { backgroundColor: 'rgba(255, 255, 0, 0.8)' },
-          { backgroundColor: 'rgba(255, 255, 0, 0.4)' }
-        ],
-        { duration: 500 }
-      );
-    } catch (e) {
-      console.error("Error highlighting text:", e);
-    }
-    
-    // Clear the selection
-    selection.removeAllRanges();
-  };
-  
-  // Handle adding a note
-  const handleAddNote = (e: React.MouseEvent) => {
-    if (activeTool !== "note" || !contentRef.current) return;
-    
-    const rect = contentRef.current.getBoundingClientRect();
-    const noteX = e.clientX - rect.left;
-    const noteY = e.clientY - rect.top;
-    
-    const noteId = `note_${Date.now()}`;
-    const noteElement = document.createElement('div');
-    noteElement.id = noteId;
-    noteElement.className = 'sticky-note group';
-    noteElement.style.cssText = `
-      position: absolute;
-      left: ${noteX}px;
-      top: ${noteY}px;
-      z-index: 5;
-      width: 150px;
-      min-height: 75px;
-      padding: 8px;
-      background-color: #fff59d;
-      border: 1px solid #ffeb3b;
-      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-      border-radius: 4px;
-      font-size: 0.875rem;
-    `;
-    
-    // Add delete button
-    const deleteButton = document.createElement('button');
-    deleteButton.innerHTML = '✕';
-    deleteButton.className = 'absolute top-1 right-1 opacity-100 text-gray-600 hover:text-red-500';
-    deleteButton.style.cssText = `
-      background: none;
-      border: none;
-      cursor: pointer;
-      padding: 2px;
-      font-size: 12px;
-    `;
-    
-    deleteButton.onclick = (e) => {
-      e.stopPropagation();
-      noteElement.remove();
-    };
-    
-    noteElement.appendChild(deleteButton);
-    
-    const noteContent = document.createElement('div');
-    noteContent.contentEditable = 'true';
-    noteContent.textContent = "Click to edit";
-    noteContent.style.marginTop = '15px';
-    
-    noteElement.appendChild(noteContent);
-    contentRef.current.appendChild(noteElement);
-    
-    // Make note draggable only when using select tool or note tool
-    let isNoteDragging = false;
-    let startX: number;
-    let startY: number;
-    
-    noteElement.onmousedown = (e) => {
-      // Fix: Correct comparison with the Tool type
-      if (activeTool !== "select" && activeTool !== "note") return;
-      if (e.target === deleteButton || e.target === noteContent) return;
-      
-      isNoteDragging = true;
-      startX = e.clientX - noteElement.offsetLeft;
-      startY = e.clientY - noteElement.offsetTop;
-      e.stopPropagation();
-      
-      // Prevent note from detaching during drag
-      e.preventDefault();
-    };
-    
-    const noteMoveHandler = (e: MouseEvent) => {
-      if (!isNoteDragging) return;
-      noteElement.style.left = `${e.clientX - startX}px`;
-      noteElement.style.top = `${e.clientY - startY}px`;
-    };
-    
-    const noteUpHandler = () => {
-      isNoteDragging = false;
-    };
-    
-    // Attach the event listeners directly to the document
-    document.addEventListener('mousemove', noteMoveHandler);
-    document.addEventListener('mouseup', noteUpHandler);
-    
-    // Ensure note content doesn't trigger card dragging
-    noteContent.addEventListener('mousedown', (e) => {
-      e.stopPropagation();
-    });
-  };
-  
+
   return (
     <div
       ref={cardRef}
-      className={`absolute bg-white border border-gray-200 rounded-md shadow-md overflow-hidden ${
-        activeTool === "move" ? "cursor-move" : ""
+      className={`absolute bg-white border border-gray-300 rounded-lg shadow-lg overflow-hidden flex flex-col transition-shadow ${
+        isDragging || isResizing ? "shadow-2xl border-blue-400" : "hover:shadow-xl"
       }`}
       style={{
         left: `${article.position.x}px`,
         top: `${article.position.y}px`,
         width: `${article.size.width}px`,
         height: article.minimized ? "auto" : `${article.size.height}px`,
-        zIndex: isDragging || isResizing ? 10 : 1
+        zIndex: isDragging || isResizing ? 50 : 10,
+        cursor: activeTool === "move" ? "move" : "default"
       }}
     >
-      {/* Article Header */}
-      <div 
-        className="bg-gray-100 p-2 border-b border-gray-200 flex items-center"
-        onMouseDown={handleMouseDown}
+      {/* Header - Draggable */}
+      <div
+        className="bg-gradient-to-r from-blue-500 to-blue-600 px-4 py-3 flex items-center gap-2 cursor-move hover:from-blue-600 hover:to-blue-700 transition-all flex-shrink-0"
+        onMouseDown={handleHeaderMouseDown}
       >
-        <div className="mr-1 text-gray-500">
-          <span className="text-xs">⋮⋮</span>
+        <div className="flex-1 min-w-0">
+          <h3 className="text-sm font-semibold text-white truncate" title={article.title}>
+            {article.isLoading ? (
+              <span className="flex items-center gap-2">
+                <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Loading...
+              </span>
+            ) : (
+              article.title
+            )}
+          </h3>
+          <p className="text-xs text-blue-100 truncate" title={article.url}>
+            {article.url}
+          </p>
         </div>
-        <h3 className="text-sm font-medium flex-1 mr-2 truncate" title={article.title}>
-          {article.title}
-        </h3>
-        <div className="flex space-x-1">
+        
+        <div className="flex gap-1 flex-shrink-0">
           <Button
             size="icon"
             variant="ghost"
-            className="h-6 w-6"
-            onClick={toggleMinimized}
+            className="h-8 w-8 text-white hover:bg-white hover:bg-opacity-20"
+            onClick={(e) => {
+              e.stopPropagation();
+              toggleMinimized();
+            }}
+            title={article.minimized ? "Expand" : "Minimize"}
           >
-            {article.minimized ? (
-              <span className="text-xs">□</span>
-            ) : (
-              <span className="text-xs">_</span>
-            )}
+            {article.minimized ? "□" : "−"}
           </Button>
           <Button
             size="icon"
             variant="ghost"
-            className="h-6 w-6 text-red-500 hover:text-red-700"
-            onClick={() => onDelete(article.id)}
+            className="h-8 w-8 text-white hover:bg-red-500"
+            onClick={(e) => {
+              e.stopPropagation();
+              onDelete(article.id);
+            }}
+            title="Delete"
           >
-            <span className="text-xs">✕</span>
+            <X size={16} />
           </Button>
         </div>
       </div>
-      
-      {/* Article Content */}
+
+      {/* Content */}
       {!article.minimized && (
-        <div 
+        <div
           ref={contentRef}
-          className="p-4 overflow-y-auto h-[calc(100%-40px)]"
-          onMouseUp={handleHighlight}
-          onClick={handleAddNote}
+          className="flex-1 overflow-y-auto p-4 text-sm leading-relaxed"
+          style={{
+            minHeight: "200px"
+          }}
         >
           {article.isLoading ? (
             <div className="flex items-center justify-center h-full">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+              <div className="text-center">
+                <div className="inline-block w-8 h-8 border-3 border-blue-200 border-t-blue-500 rounded-full animate-spin mb-2" />
+                <p className="text-gray-500">Loading article...</p>
+              </div>
+            </div>
+          ) : article.error ? (
+            <div className="text-red-500 text-center p-4 bg-red-50 rounded">
+              <p className="font-semibold">Error</p>
+              <p className="text-xs">{article.error}</p>
             </div>
           ) : article.content ? (
-            <div 
-              className="prose max-w-full"
+            <div
+              className="prose prose-sm max-w-full"
               dangerouslySetInnerHTML={{ __html: article.content }}
             />
           ) : (
-            <div className="text-gray-500 text-center">
+            <div className="text-gray-400 text-center">
               No content available
             </div>
           )}
         </div>
       )}
-      
-      {/* Resize handle */}
+
+      {/* Resize Handles */}
       {!article.minimized && (
-        <div
-          className="absolute bottom-0 right-0 w-4 h-4 cursor-ew-resize"
-          onMouseDown={handleResizeMouseDown}
-        />
+        <>
+          {/* Right edge resize */}
+          <div
+            className="absolute top-0 right-0 w-1 h-full cursor-ew-resize hover:bg-blue-400 hover:w-2 transition-all"
+            onMouseDown={(e) => handleResizeMouseDown(e, "e")}
+            title="Drag to resize width"
+          />
+          
+          {/* Bottom-right corner resize */}
+          <div
+            className="absolute bottom-0 right-0 w-4 h-4 cursor-nwse-resize hover:bg-blue-400 transition-all"
+            onMouseDown={(e) => handleResizeMouseDown(e, "se")}
+            title="Drag to resize"
+            style={{
+              clipPath: "polygon(100% 0, 100% 100%, 0 100%)"
+            }}
+          />
+        </>
       )}
     </div>
   );
