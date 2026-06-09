@@ -2,7 +2,7 @@
 
 A modern multi-article canvas viewer that allows you to load, organize, and annotate multiple web articles side-by-side on an infinite canvas.
 
-## Features ✨
+## Features 
 
 - **Multi-Article Canvas**: Load multiple articles simultaneously and arrange them freely on a canvas
 - **Smooth Dragging**: Move articles around with precise mouse tracking
