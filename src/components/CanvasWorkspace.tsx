@@ -9,6 +9,16 @@ interface CanvasWorkspaceProps {
   activeTool: Tool;
 }
 
+interface CanvasNote {
+  id: string;
+  text: string;
+  position: {
+    x: number;
+    y: number;
+  };
+  createdAt: number;
+}
+
 const CanvasWorkspace = ({
   articles,
   onUpdateArticle,
@@ -21,6 +31,7 @@ const CanvasWorkspace = ({
   const [viewOffset, setViewOffset] = useState({ x: 0, y: 0 });
   const [zoomLevel, setZoomLevel] = useState(1);
   const [containers, setContainers] = useState<Container[]>([]);
+  const [notes, setNotes] = useState<CanvasNote[]>([]);
   const [draftContainer, setDraftContainer] = useState<Container | null>(null);
   const [isDrawingContainer, setIsDrawingContainer] = useState(false);
   const [drawStart, setDrawStart] = useState({ x: 0, y: 0 });
@@ -65,10 +76,29 @@ const CanvasWorkspace = ({
   }, [handleZoom]);
 
   const handleCanvasMouseDown = (e: React.MouseEvent) => {
+    const target = e.target as HTMLElement;
+
     if (activeTool === "pan") {
       e.preventDefault();
       setIsPanning(true);
       setPanStart({ x: e.clientX, y: e.clientY });
+    } else if (activeTool === "note") {
+      if (target.closest("[data-canvas-item]") || target.closest("[data-note-ui]")) return;
+      e.preventDefault();
+      const rect = canvasRef.current?.getBoundingClientRect();
+      if (rect) {
+        const x = (e.clientX - rect.left - viewOffset.x) / zoomLevel;
+        const y = (e.clientY - rect.top - viewOffset.y) / zoomLevel;
+        setNotes((prev) => [
+          ...prev,
+          {
+            id: `note_${Date.now()}`,
+            text: "",
+            position: { x, y },
+            createdAt: Date.now()
+          }
+        ]);
+      }
     } else if (activeTool === "container") {
       e.preventDefault();
       const rect = canvasRef.current?.getBoundingClientRect();
@@ -195,6 +225,14 @@ const CanvasWorkspace = ({
     setContainers(prev => prev.filter(c => c.id !== id));
   };
 
+  const updateNote = (id: string, text: string) => {
+    setNotes((prev) => prev.map((note) => (note.id === id ? { ...note, text } : note)));
+  };
+
+  const deleteNote = (id: string) => {
+    setNotes((prev) => prev.filter((note) => note.id !== id));
+  };
+
   return (
     <div
       ref={canvasRef}
@@ -208,6 +246,8 @@ const CanvasWorkspace = ({
               : "grab"
             : activeTool === "container"
             ? "crosshair"
+            : activeTool === "note"
+            ? "cell"
             : "default"
       }}
     >
@@ -234,6 +274,7 @@ const CanvasWorkspace = ({
         {containers.map(container => (
           <div
             key={container.id}
+            data-canvas-item
             className="absolute border-2 border-blue-400 dark:border-blue-500 rounded-lg pointer-events-auto group hover:shadow-lg transition-shadow"
             style={{
               left: `${container.position.x}px`,
@@ -286,6 +327,7 @@ const CanvasWorkspace = ({
 
         {draftContainer && (
           <div
+            data-canvas-item
             className="absolute border-2 border-dashed border-blue-400 dark:border-blue-500 rounded-lg pointer-events-none"
             style={{
               left: `${draftContainer.position.x}px`,
@@ -298,8 +340,44 @@ const CanvasWorkspace = ({
           />
         )}
 
+        {notes.map((note) => (
+          <div
+            key={note.id}
+            data-note-ui
+            className="absolute pointer-events-auto bg-amber-100 dark:bg-amber-700 border border-amber-300 dark:border-amber-600 rounded-md shadow-md p-2 w-56"
+            style={{
+              left: `${note.position.x}px`,
+              top: `${note.position.y}px`,
+              zIndex: 25
+            }}
+            onMouseDown={(e) => e.stopPropagation()}
+          >
+            <div className="flex justify-end mb-1">
+              <button
+                type="button"
+                onMouseDown={(e) => e.stopPropagation()}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  deleteNote(note.id);
+                }}
+                className="text-amber-700 dark:text-amber-200 hover:text-red-600 dark:hover:text-red-300 text-xs"
+                aria-label="Delete note"
+              >
+                ✕
+              </button>
+            </div>
+            <textarea
+              value={note.text}
+              onMouseDown={(e) => e.stopPropagation()}
+              onChange={(e) => updateNote(note.id, e.target.value)}
+              placeholder="Write a note..."
+              className="w-full h-24 resize-none bg-transparent text-sm text-amber-900 dark:text-amber-50 placeholder:text-amber-700 dark:placeholder:text-amber-200 outline-none"
+            />
+          </div>
+        ))}
+
         {articles.map(article => (
-          <div key={article.id} className="pointer-events-auto">
+          <div key={article.id} data-canvas-item className="pointer-events-auto">
             <ArticleCard
               article={article}
               onUpdate={onUpdateArticle}

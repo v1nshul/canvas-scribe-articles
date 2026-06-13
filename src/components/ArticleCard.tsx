@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Article, Tool, Note } from "@/types";
+import { Article, Tool } from "@/types";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 
@@ -15,9 +15,7 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool, zoomLevel }: Art
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState<false | "e" | "se">(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
   const cardRef = useRef<HTMLDivElement>(null);
-  const contentRef = useRef<HTMLDivElement>(null);
   
   const handleHeaderMouseDown = (e: React.MouseEvent) => {
     if (activeTool !== "move") return;
@@ -116,43 +114,6 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool, zoomLevel }: Art
     });
   };
 
-  const addNote = (e: React.MouseEvent) => {
-    if (activeTool !== "note" || !contentRef.current) return;
-    
-    const rect = contentRef.current.getBoundingClientRect();
-    const x = (e.clientX - rect.left) / zoomLevel;
-    const y = (e.clientY - rect.top) / zoomLevel;
-    
-    const newNote: Note = {
-      id: `note_${Date.now()}`,
-      articleId: article.id,
-      text: "Click to edit note...",
-      position: { x, y },
-      createdAt: Date.now()
-    };
-    
-    onUpdate({
-      ...article,
-      notes: [...article.notes, newNote]
-    });
-  };
-
-  const updateNote = (noteId: string, text: string) => {
-    onUpdate({
-      ...article,
-      notes: article.notes.map(note =>
-        note.id === noteId ? { ...note, text } : note
-      )
-    });
-  };
-
-  const deleteNote = (noteId: string) => {
-    onUpdate({
-      ...article,
-      notes: article.notes.filter(note => note.id !== noteId)
-    });
-  };
-
   return (
     <div
       ref={cardRef}
@@ -218,9 +179,7 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool, zoomLevel }: Art
 
       {!article.minimized && (
         <div
-          ref={contentRef}
           className="flex-1 overflow-y-auto p-4 text-sm leading-relaxed relative bg-white dark:bg-slate-900"
-          onClick={addNote}
           style={{
             minHeight: "200px"
           }}
@@ -247,45 +206,6 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool, zoomLevel }: Art
               No content available
             </div>
           )}
-
-          {article.notes.map(note => (
-            <div
-              key={note.id}
-              className="absolute bg-yellow-200 dark:bg-yellow-700 border-2 border-yellow-400 dark:border-yellow-600 rounded-lg p-3 shadow-md max-w-xs"
-              style={{
-                left: `${note.position.x}px`,
-                top: `${note.position.y}px`,
-                zIndex: 20,
-                minWidth: "140px"
-              }}
-            >
-              <div className="flex justify-between items-start gap-2 mb-2">
-                <span className="text-xs font-semibold text-gray-700 dark:text-gray-900">Note</span>
-                <button
-                  onClick={() => deleteNote(note.id)}
-                  className="text-gray-600 dark:text-gray-900 hover:text-red-600 dark:hover:text-red-500 text-sm"
-                >
-                  ✕
-                </button>
-              </div>
-              {editingNoteId === note.id ? (
-                <textarea
-                  value={note.text}
-                  onChange={(e) => updateNote(note.id, e.target.value)}
-                  onBlur={() => setEditingNoteId(null)}
-                  className="w-full text-xs p-1 border border-yellow-400 dark:border-yellow-600 rounded bg-yellow-50 dark:bg-yellow-800 text-gray-900 dark:text-white focus:outline-none"
-                  autoFocus
-                />
-              ) : (
-                <p
-                  onClick={() => setEditingNoteId(note.id)}
-                  className="text-xs text-gray-800 dark:text-gray-900 cursor-pointer hover:bg-yellow-300 dark:hover:bg-yellow-600 p-1 rounded"
-                >
-                  {note.text}
-                </p>
-              )}
-            </div>
-          ))}
         </div>
       )}
 
