@@ -4,11 +4,6 @@ export interface FetchResult {
   error?: string;
 }
 
-const CORS_PROXIES = [
-  (url: string) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
-  (url: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-];
-
 const CONTENT_SELECTORS = [
   "article",
   "main",
@@ -24,79 +19,90 @@ const CONTENT_SELECTORS = [
   ".main-content"
 ];
 
+function buildProxyUrl(url: string): string {
+  return `/api/fetch?url=${encodeURIComponent(url)}`;
+}
+
 export async function fetchArticleContent(url: string): Promise<FetchResult> {
-  let lastError: Error | null = null;
-  let html = "";
+  let lastError = "Unable to fetch article";
 
-  // Try each proxy
-  for (const proxyFn of CORS_PROXIES) {
-    try {
-      const proxyUrl = proxyFn(url);
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000);
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
 
-      const response = await fetch(proxyUrl, {
-        signal: controller.signal
-      });
+    const response = await fetch(buildProxyUrl(url), {
+      signal: controller.signal,
+    });
 
-      clearTimeout(timeoutId);
+    clearTimeout(timeoutId);
 
-      if (response.ok) {
-        html = await response.text();
-        break;
+    if (!response.ok) {
+      try {
+        const payload = (await response.json()) as { error?: string };
+        lastError = payload.error || `Proxy returned ${response.status}`;
+      } catch {
+        lastError = `Proxy returned ${response.status}`;
       }
-    } catch (error) {
-      lastError = error as Error;
-      continue;
+
+      return { title: "Error", content: "", error: lastError };
     }
-  }
 
-  if (!html) {
-    const msg = lastError?.message || "Unable to fetch article from any proxy";
-    return { title: "Error", content: "", error: msg };
-  }
+    const html = await response.text();
+    return parseArticleHtml(url, html);
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.name === "AbortError"
+          ? "Request timed out"
+          : error.message
+        : lastError;
 
+    return { title: "Error", content: "", error: message };
+  }
+}
+
+function parseArticleHtml(url: string, html: string): FetchResult {
   try {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, "text/html");
 
-    // Extract title
-    const title = doc.querySelector("title")?.textContent || 
-                  doc.querySelector("h1")?.textContent ||
-                  url.split("/").filter(Boolean).pop() || 
-                  "Untitled";
+    const title =
+      doc.querySelector("title")?.textContent ||
+      doc.querySelector("h1")?.textContent ||
+      url.split("/").filter(Boolean).pop() ||
+      "Untitled";
 
-    // Extract content using multiple selectors
     let content = "";
     for (const selector of CONTENT_SELECTORS) {
       const element = doc.querySelector(selector);
       if (element) {
-        const html = element.innerHTML.trim();
-        if (html.length > 100) {
-          content = html;
+        const elementHtml = element.innerHTML.trim();
+        if (elementHtml.length > 100) {
+          content = elementHtml;
           break;
         }
       }
     }
 
-    // Fallback to body
     if (!content.trim()) {
       const body = doc.body.cloneNode(true) as HTMLElement;
-      
-      // Remove unwanted elements
-      body.querySelectorAll("script, style, nav, footer, [role='navigation'], .navbar, .sidebar").forEach(el => {
-        el.remove();
-      });
-      
+
+      body
+        .querySelectorAll(
+          "script, style, nav, footer, [role='navigation'], .navbar, .sidebar"
+        )
+        .forEach((el) => {
+          el.remove();
+        });
+
       content = body.innerHTML;
     }
 
-    // Sanitize content
     const sanitized = sanitizeHtml(content);
 
     return {
-      title: title.substring(0, 200), // Limit title length
-      content: sanitized
+      title: title.substring(0, 200),
+      content: sanitized,
     };
   } catch (error) {
     const msg = error instanceof Error ? error.message : "Failed to parse content";
@@ -108,20 +114,14 @@ function sanitizeHtml(html: string): string {
   const div = document.createElement("div");
   div.innerHTML = html;
 
-  // Remove dangerous attributes
-  div.querySelectorAll("*").forEach(el => {
-    // Remove event handlers
-    ["onclick", "onerror", "onload", "onmouseover", "onmouseout", "onchange", "onsubmit"].forEach(attr => {
-      el.removeAttribute(attr);
-    });
+  div.querySelectorAll("*").forEach((el) => {
+    ["onclick", "onerror", "onload", "onmouseover", "onmouseout", "onchange", "onsubmit"].forEach(
+      (attr) => {
+        el.removeAttribute(attr);
+      }
+    );
 
-    // Remove scripts
-    if (el.tagName === "SCRIPT") {
-      el.remove();
-    }
-
-    // Remove iframes (potential security risk)
-    if (el.tagName === "IFRAME") {
+    if (el.tagName === "SCRIPT" || el.tagName === "IFRAME") {
       el.remove();
     }
   });

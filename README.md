@@ -157,9 +157,13 @@ All articles, containers, and canvas notes are automatically saved to browser lo
 
 ## CORS Handling
 
-The application uses multiple CORS proxies for maximum compatibility:
-- Primary: corsproxy.io
-- Fallback: api.allorigins.win
+Article fetching uses a same-origin proxy at `/api/fetch` so the browser never calls third-party CORS services directly.
+
+- **Local development**: Vite serves `/api/fetch` via a dev-server middleware.
+- **Vercel**: `api/fetch.ts` runs as an Edge Function.
+- **Netlify**: `netlify/functions/fetch.ts` handles `/api/fetch`.
+
+Third-party proxies like corsproxy.io are intentionally not used in production because their free tier only allows localhost/dev origins and returns `403` on deployed domains.
 
 Content is automatically sanitized to remove scripts and dangerous attributes.
 
@@ -179,7 +183,8 @@ Content is automatically sanitized to remove scripts and dangerous attributes.
 
 **Articles not loading?**
 - Check that the URL is valid and publicly accessible
-- Some sites may have strict CORS policies - try with a different URL
+- Deploy on a host that supports serverless functions (Vercel or Netlify) so `/api/fetch` is available
+- `npm run preview` serves static files only; use `npm run dev` locally or deploy to test fetching
 - Check browser console for error messages
 
 **Performance issues with many articles?**
