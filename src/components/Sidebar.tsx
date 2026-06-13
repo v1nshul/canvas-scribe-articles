@@ -63,7 +63,7 @@ const Sidebar = ({ articles, onAddArticle, onDeleteArticle }: SidebarProps) => {
         <h2 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
           Articles
         </h2>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Manage your canvas articles</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Manage your article canvas</p>
       </div>
       
       {/* Add New Article Button */}
