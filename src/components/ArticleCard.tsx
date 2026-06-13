@@ -8,9 +8,10 @@ interface ArticleCardProps {
   onUpdate: (article: Article) => void;
   onDelete: (id: string) => void;
   activeTool: Tool;
+  zoomLevel: number;
 }
 
-const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardProps) => {
+const ArticleCard = ({ article, onUpdate, onDelete, activeTool, zoomLevel }: ArticleCardProps) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isResizing, setIsResizing] = useState<false | "e" | "se">(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
@@ -27,8 +28,8 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardPro
     
     const rect = cardRef.current.getBoundingClientRect();
     setDragStart({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
+      x: (e.clientX - rect.left) / zoomLevel,
+      y: (e.clientY - rect.top) / zoomLevel
     });
     setIsDragging(true);
   };
@@ -40,8 +41,8 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardPro
       const parentRect = cardRef.current.parentElement?.getBoundingClientRect();
       if (!parentRect) return;
       
-      const newX = e.clientX - parentRect.left - dragStart.x;
-      const newY = e.clientY - parentRect.top - dragStart.y;
+      const newX = (e.clientX - parentRect.left) / zoomLevel - dragStart.x;
+      const newY = (e.clientY - parentRect.top) / zoomLevel - dragStart.y;
       
       onUpdate({
         ...article,
@@ -62,7 +63,7 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardPro
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isDragging, dragStart, article, onUpdate]);
+  }, [isDragging, dragStart, article, onUpdate, zoomLevel]);
 
   const handleResizeMouseDown = (e: React.MouseEvent, type: "e" | "se") => {
     e.preventDefault();
@@ -77,7 +78,7 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardPro
       const rect = cardRef.current.getBoundingClientRect();
       
       if (isResizing === "e" || isResizing === "se") {
-        const newWidth = Math.max(250, e.clientX - rect.left);
+        const newWidth = Math.max(250, (e.clientX - rect.left) / zoomLevel);
         onUpdate({
           ...article,
           size: { ...article.size, width: newWidth }
@@ -85,7 +86,7 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardPro
       }
       
       if (isResizing === "se") {
-        const newHeight = Math.max(200, e.clientY - rect.top);
+        const newHeight = Math.max(200, (e.clientY - rect.top) / zoomLevel);
         onUpdate({
           ...article,
           size: { ...article.size, height: newHeight }
@@ -106,7 +107,7 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardPro
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isResizing, article, onUpdate]);
+  }, [isResizing, article, onUpdate, zoomLevel]);
 
   const toggleMinimized = () => {
     onUpdate({
@@ -119,8 +120,8 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool }: ArticleCardPro
     if (activeTool !== "note" || !contentRef.current) return;
     
     const rect = contentRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const x = (e.clientX - rect.left) / zoomLevel;
+    const y = (e.clientY - rect.top) / zoomLevel;
     
     const newNote: Note = {
       id: `note_${Date.now()}`,

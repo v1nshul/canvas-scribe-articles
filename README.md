@@ -10,6 +10,7 @@ A modern multi-article canvas viewer that allows you to load, organize, and anno
 - **Canvas Navigation**: 
   - Pan around the canvas with the Pan tool
   - Zoom in/out with Ctrl+Scroll (or Cmd+Scroll on Mac)
+- **Sidebar Toggle**: Quickly hide/show the left sidebar to focus on reading space
 - **Content Fetching**: Automatically extracts and displays article content from web URLs
 - **Local Persistence**: Your work is automatically saved to browser storage
 - **Tools**:
@@ -75,6 +76,7 @@ npm run preview
 3. **Navigating**:
    - Switch to "Pan" tool and drag to navigate the canvas
    - Use Ctrl+Scroll (or Cmd+Scroll) to zoom in/out
+   - Use the top-left toggle button to collapse or open the sidebar
    - The zoom level is displayed in the bottom-right corner
 
 4. **Managing Articles**:

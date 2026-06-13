@@ -2,14 +2,16 @@
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useTheme } from "@/contexts/ThemeContext";
-import { Moon, Sun } from "lucide-react";
+import { ChevronLeft, ChevronRight, Moon, Sun } from "lucide-react";
 
 interface ToolbarProps {
   activeTool: "move" | "pan" | "highlight" | "note" | "select" | "container";
   onChangeTool: (tool: "move" | "pan" | "highlight" | "note" | "select" | "container") => void;
+  isSidebarOpen: boolean;
+  onToggleSidebar: () => void;
 }
 
-const Toolbar = ({ activeTool, onChangeTool }: ToolbarProps) => {
+const Toolbar = ({ activeTool, onChangeTool, isSidebarOpen, onToggleSidebar }: ToolbarProps) => {
   const { theme, toggleTheme } = useTheme();
 
   const tools = [
@@ -21,6 +23,18 @@ const Toolbar = ({ activeTool, onChangeTool }: ToolbarProps) => {
 
   return (
     <div className="border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 flex items-center gap-3 shadow-sm">
+      <Button
+        size="icon"
+        variant="outline"
+        onClick={onToggleSidebar}
+        className="dark:text-white dark:hover:bg-slate-700"
+        title={isSidebarOpen ? "Hide sidebar" : "Show sidebar"}
+      >
+        {isSidebarOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
+      </Button>
+
+      <Separator orientation="vertical" className="h-6" />
+
       <div className="flex gap-2">
         {tools.map(tool => (
           <Button

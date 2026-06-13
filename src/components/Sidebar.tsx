@@ -58,7 +58,7 @@ const Sidebar = ({ articles, onAddArticle, onDeleteArticle }: SidebarProps) => {
   };
 
   return (
-    <div className="w-80 border-r border-gray-200 dark:border-slate-700 p-4 flex flex-col h-full bg-white dark:bg-slate-800">
+    <div className="w-full p-4 flex flex-col h-full bg-white dark:bg-slate-800">
       <div className="mb-4">
         <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
           Articles

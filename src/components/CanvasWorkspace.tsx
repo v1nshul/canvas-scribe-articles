@@ -21,6 +21,7 @@ const CanvasWorkspace = ({
   const [viewOffset, setViewOffset] = useState({ x: 0, y: 0 });
   const [zoomLevel, setZoomLevel] = useState(1);
   const [containers, setContainers] = useState<Container[]>([]);
+  const [draftContainer, setDraftContainer] = useState<Container | null>(null);
   const [isDrawingContainer, setIsDrawingContainer] = useState(false);
   const [drawStart, setDrawStart] = useState({ x: 0, y: 0 });
   const [editingContainerId, setEditingContainerId] = useState<string | null>(null);
@@ -37,17 +38,19 @@ const CanvasWorkspace = ({
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
     
-    const delta = e.deltaY > 0 ? -0.1 : 0.1;
-    const newZoom = Math.min(Math.max(0.5, zoomLevel + delta), 3);
-    const zoomChange = newZoom / zoomLevel;
-    
-    setViewOffset(prev => ({
-      x: mouseX - (mouseX - prev.x) * zoomChange,
-      y: mouseY - (mouseY - prev.y) * zoomChange
-    }));
-    
-    setZoomLevel(newZoom);
-  }, [zoomLevel]);
+    const zoomFactor = Math.exp(-e.deltaY * 0.0015);
+    setZoomLevel((currentZoom) => {
+      const newZoom = Math.min(Math.max(0.5, currentZoom * zoomFactor), 3);
+      const zoomChange = newZoom / currentZoom;
+
+      setViewOffset((prev) => ({
+        x: mouseX - (mouseX - prev.x) * zoomChange,
+        y: mouseY - (mouseY - prev.y) * zoomChange
+      }));
+
+      return newZoom;
+    });
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -71,9 +74,16 @@ const CanvasWorkspace = ({
       const rect = canvasRef.current?.getBoundingClientRect();
       if (rect) {
         setIsDrawingContainer(true);
-        setDrawStart({
-          x: (e.clientX - rect.left - viewOffset.x) / zoomLevel,
-          y: (e.clientY - rect.top - viewOffset.y) / zoomLevel
+        const startX = (e.clientX - rect.left - viewOffset.x) / zoomLevel;
+        const startY = (e.clientY - rect.top - viewOffset.y) / zoomLevel;
+        setDrawStart({ x: startX, y: startY });
+        setDraftContainer({
+          id: "draft_container",
+          label: "",
+          position: { x: startX, y: startY },
+          size: { width: 0, height: 0 },
+          color: "#3b82f6",
+          createdAt: 0
         });
       }
     }
@@ -122,22 +132,25 @@ const CanvasWorkspace = ({
       const x = Math.min(drawStart.x, currentX);
       const y = Math.min(drawStart.y, currentY);
 
-      setContainers(prev => {
-        const lastContainer = prev[prev.length - 1];
-        if (lastContainer && lastContainer.label === "" && lastContainer.createdAt === 0) {
-          return [...prev.slice(0, -1), { ...lastContainer, position: { x, y }, size: { width, height } }];
-        }
-        return prev;
-      });
+      setDraftContainer((prev) =>
+        prev
+          ? {
+              ...prev,
+              position: { x, y },
+              size: { width, height }
+            }
+          : prev
+      );
     };
 
-    const handleMouseUp = () => {
+    const handleMouseUp = (e: MouseEvent) => {
       if (isDrawingContainer) {
         setIsDrawingContainer(false);
+        setDraftContainer(null);
         const rect = canvasRef.current?.getBoundingClientRect();
         if (rect) {
-          const currentX = (event as any).clientX - rect.left - viewOffset.x / zoomLevel;
-          const currentY = (event as any).clientY - rect.top - viewOffset.y / zoomLevel;
+          const currentX = (e.clientX - rect.left - viewOffset.x) / zoomLevel;
+          const currentY = (e.clientY - rect.top - viewOffset.y) / zoomLevel;
           const width = Math.abs(currentX - drawStart.x);
           const height = Math.abs(currentY - drawStart.y);
 
@@ -271,6 +284,20 @@ const CanvasWorkspace = ({
           </div>
         ))}
 
+        {draftContainer && (
+          <div
+            className="absolute border-2 border-dashed border-blue-400 dark:border-blue-500 rounded-lg pointer-events-none"
+            style={{
+              left: `${draftContainer.position.x}px`,
+              top: `${draftContainer.position.y}px`,
+              width: `${draftContainer.size.width}px`,
+              height: `${draftContainer.size.height}px`,
+              backgroundColor: "rgba(59, 130, 246, 0.08)",
+              zIndex: 4
+            }}
+          />
+        )}
+
         {articles.map(article => (
           <div key={article.id} className="pointer-events-auto">
             <ArticleCard
@@ -278,6 +305,7 @@ const CanvasWorkspace = ({
               onUpdate={onUpdateArticle}
               onDelete={onDeleteArticle}
               activeTool={activeTool}
+              zoomLevel={zoomLevel}
             />
           </div>
         ))}

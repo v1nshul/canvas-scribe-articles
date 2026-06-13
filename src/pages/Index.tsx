@@ -11,6 +11,7 @@ const Index = () => {
   const [articles, setArticles] = useState<Article[]>([]);
   const [activeTool, setActiveTool] = useState<"move" | "pan" | "highlight" | "note" | "select" | "container">("move");
   const [isLoading, setIsLoading] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
   // Load articles from localStorage on mount
   useEffect(() => {
@@ -116,13 +117,25 @@ const Index = () => {
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-slate-900">
-      <Sidebar
-        articles={articles}
-        onAddArticle={addArticle}
-        onDeleteArticle={deleteArticle}
-      />
-      <div className="flex flex-col flex-1 overflow-hidden">
-        <Toolbar activeTool={activeTool} onChangeTool={setActiveTool} />
+      <div
+        className={`transition-all duration-300 ease-in-out overflow-hidden border-r border-gray-200 dark:border-slate-700 ${
+          isSidebarOpen ? "w-80" : "w-0 border-r-0"
+        }`}
+      >
+        <Sidebar
+          articles={articles}
+          onAddArticle={addArticle}
+          onDeleteArticle={deleteArticle}
+        />
+      </div>
+
+      <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+        <Toolbar
+          activeTool={activeTool}
+          onChangeTool={setActiveTool}
+          isSidebarOpen={isSidebarOpen}
+          onToggleSidebar={() => setIsSidebarOpen((prev) => !prev)}
+        />
         <CanvasWorkspace
           articles={articles}
           onUpdateArticle={updateArticle}
