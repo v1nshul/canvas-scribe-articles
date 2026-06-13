@@ -1,4 +1,4 @@
-import { fetchArticleHtml, isAllowedUrl } from "./_lib/fetch-article";
+import { fetchArticleHtml, isAllowedUrl } from "./_lib/fetch-article.ts";
 
 type VercelRequest = {
   method?: string;
