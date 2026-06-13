@@ -106,7 +106,7 @@ const Index = () => {
 
   if (isLoading) {
     return (
-      <div className="flex h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-950 dark:to-slate-900">
+      <div className="flex h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-zinc-950 dark:to-zinc-900">
         <div className="text-center">
           <div className="inline-block w-12 h-12 border-4 border-blue-200 border-t-blue-600 dark:border-blue-800 dark:border-t-blue-500 rounded-full animate-spin mb-4" />
           <p className="text-gray-700 dark:text-gray-300 font-medium">Loading your workspace...</p>
@@ -116,9 +116,9 @@ const Index = () => {
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-slate-900">
+    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-zinc-900">
       <div
-        className={`transition-all duration-300 ease-in-out overflow-hidden border-r border-gray-200 dark:border-slate-700 ${
+        className={`transition-all duration-300 ease-in-out overflow-hidden border-r border-gray-200 dark:border-zinc-700 ${
           isSidebarOpen ? "w-80" : "w-0 border-r-0"
         }`}
       >

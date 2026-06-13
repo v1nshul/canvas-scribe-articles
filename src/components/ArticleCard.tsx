@@ -117,7 +117,7 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool, zoomLevel }: Art
   return (
     <div
       ref={cardRef}
-      className={`absolute bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-700 rounded-lg shadow-lg overflow-hidden flex flex-col transition-shadow ${
+      className={`absolute bg-white dark:bg-zinc-900 border border-gray-300 dark:border-zinc-700 rounded-lg shadow-lg overflow-hidden flex flex-col transition-shadow ${
         isDragging || isResizing ? "shadow-2xl border-blue-400" : "hover:shadow-xl"
       }`}
       style={{
@@ -179,7 +179,7 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool, zoomLevel }: Art
 
       {!article.minimized && (
         <div
-          className="flex-1 overflow-y-auto p-4 text-sm leading-relaxed relative bg-white dark:bg-slate-900"
+          className="flex-1 overflow-y-auto p-4 text-sm leading-relaxed relative bg-white dark:bg-zinc-900"
           style={{
             minHeight: "200px"
           }}

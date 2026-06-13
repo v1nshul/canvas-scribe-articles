@@ -15,19 +15,19 @@ const Toolbar = ({ activeTool, onChangeTool, isSidebarOpen, onToggleSidebar }: T
   const { theme, toggleTheme } = useTheme();
 
   const tools = [
-    { id: "move" as const, label: "Move", icon: "⬌", description: "Drag articles" },
-    { id: "pan" as const, label: "Pan", icon: "✋", description: "Navigate canvas" },
-    { id: "container" as const, label: "Container", icon: "▭", description: "Group articles" },
-    { id: "note" as const, label: "Note", icon: "📝", description: "Add sticky notes" },
+    { id: "move" as const, label: "Move", description: "Drag articles" },
+    { id: "pan" as const, label: "Pan", description: "Navigate canvas" },
+    { id: "container" as const, label: "Container", description: "Group articles" },
+    { id: "note" as const, label: "Notes", description: "Add notes on canvas" },
   ];
 
   return (
-    <div className="border-b border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-4 py-3 flex items-center gap-3 shadow-sm">
+    <div className="border-b border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 px-4 py-3 flex items-center gap-3 shadow-sm">
       <Button
         size="icon"
         variant="outline"
         onClick={onToggleSidebar}
-        className="dark:text-white dark:hover:bg-slate-700"
+        className="dark:text-white dark:hover:bg-zinc-700"
         title={isSidebarOpen ? "Hide sidebar" : "Show sidebar"}
       >
         {isSidebarOpen ? <ChevronLeft size={18} /> : <ChevronRight size={18} />}
@@ -40,17 +40,16 @@ const Toolbar = ({ activeTool, onChangeTool, isSidebarOpen, onToggleSidebar }: T
           <Button
             key={tool.id}
             size="sm"
-            variant={activeTool === tool.id ? "default" : "outline"}
+            variant="outline"
             onClick={() => onChangeTool(tool.id)}
-            className={`flex items-center gap-2 transition-all dark:text-white ${
+            className={`transition-colors font-medium tracking-tight dark:text-white ${
               activeTool === tool.id 
-                ? "bg-gradient-to-r from-blue-500 to-indigo-500 border-transparent dark:from-blue-700 dark:to-indigo-700" 
-                : "hover:bg-gray-50 dark:hover:bg-slate-700"
+                ? "bg-zinc-900 text-white border-zinc-900 dark:bg-zinc-100 dark:text-zinc-900 dark:border-zinc-100" 
+                : "hover:bg-gray-50 dark:hover:bg-zinc-700"
             }`}
             title={tool.description}
           >
-            <span>{tool.icon}</span>
-            <span className="text-xs font-medium">{tool.label}</span>
+            <span className="text-xs">{tool.label}</span>
           </Button>
         ))}
       </div>
@@ -67,7 +66,7 @@ const Toolbar = ({ activeTool, onChangeTool, isSidebarOpen, onToggleSidebar }: T
         size="icon"
         variant="outline"
         onClick={toggleTheme}
-        className="dark:text-white dark:hover:bg-slate-700"
+        className="dark:text-white dark:hover:bg-zinc-700"
         title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
       >
         {theme === 'light' ? (

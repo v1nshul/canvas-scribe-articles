@@ -233,10 +233,14 @@ const CanvasWorkspace = ({
     setNotes((prev) => prev.filter((note) => note.id !== id));
   };
 
+  const gridSize = 24;
+  const gridOffsetX = ((viewOffset.x % gridSize) + gridSize) % gridSize;
+  const gridOffsetY = ((viewOffset.y % gridSize) + gridSize) % gridSize;
+
   return (
     <div
       ref={canvasRef}
-      className="flex-1 overflow-hidden relative bg-gradient-to-br from-gray-50 to-gray-100 dark:from-slate-950 dark:to-slate-900"
+      className="flex-1 overflow-hidden relative bg-gradient-to-br from-gray-50 to-gray-100 dark:from-zinc-950 dark:to-zinc-900"
       onMouseDown={handleCanvasMouseDown}
       style={{
         cursor:
@@ -252,15 +256,21 @@ const CanvasWorkspace = ({
       }}
     >
       <div
-        className="absolute inset-0"
+        className="absolute inset-0 dark:hidden"
         style={{
-          backgroundImage: "radial-gradient(circle at 1px 1px, #d1d1d1 1px, transparent 1px)",
-          backgroundSize: "20px 20px",
-          transform: `translate(${viewOffset.x}px, ${viewOffset.y}px)`,
-          opacity: 0.3,
-          dark: {
-            backgroundImage: "radial-gradient(circle at 1px 1px, #475569 1px, transparent 1px)"
-          }
+          backgroundImage:
+            "linear-gradient(to right, rgba(148, 163, 184, 0.26) 1px, transparent 1px), linear-gradient(to bottom, rgba(148, 163, 184, 0.26) 1px, transparent 1px)",
+          backgroundSize: `${gridSize}px ${gridSize}px`,
+          backgroundPosition: `${gridOffsetX}px ${gridOffsetY}px`
+        }}
+      />
+      <div
+        className="absolute inset-0 hidden dark:block"
+        style={{
+          backgroundImage:
+            "linear-gradient(to right, rgba(255, 255, 255, 0.09) 1px, transparent 1px), linear-gradient(to bottom, rgba(255, 255, 255, 0.09) 1px, transparent 1px)",
+          backgroundSize: `${gridSize}px ${gridSize}px`,
+          backgroundPosition: `${gridOffsetX}px ${gridOffsetY}px`
         }}
       />
 
@@ -390,7 +400,7 @@ const CanvasWorkspace = ({
 
         {articles.length === 0 && (
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <div className="bg-white dark:bg-slate-800 bg-opacity-90 dark:bg-opacity-90 backdrop-blur px-8 py-12 rounded-xl shadow-lg text-center max-w-md">
+            <div className="bg-white dark:bg-zinc-800 bg-opacity-90 dark:bg-opacity-90 backdrop-blur px-8 py-12 rounded-xl shadow-lg text-center max-w-md">
               <h3 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-3">
                 Your canvas is empty
               </h3>
@@ -405,7 +415,7 @@ const CanvasWorkspace = ({
         )}
       </div>
 
-      <div className="absolute bottom-4 right-4 bg-white dark:bg-slate-800 bg-opacity-80 dark:bg-opacity-80 backdrop-blur px-3 py-2 rounded text-xs text-gray-600 dark:text-gray-300 pointer-events-none">
+      <div className="absolute bottom-4 right-4 bg-white dark:bg-zinc-800 bg-opacity-80 dark:bg-opacity-80 backdrop-blur px-3 py-2 rounded text-xs text-gray-600 dark:text-gray-300 pointer-events-none">
         <div>
           <span className="font-semibold">Zoom:</span> {(zoomLevel * 100).toFixed(0)}%
         </div>
