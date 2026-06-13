@@ -4,6 +4,7 @@ import { Article } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
+import { CircleHelp } from "lucide-react";
 
 interface SidebarProps {
   articles: Article[];
@@ -60,9 +61,16 @@ const Sidebar = ({ articles, onAddArticle, onDeleteArticle }: SidebarProps) => {
   return (
     <div className="w-full p-4 flex flex-col h-full bg-white dark:bg-zinc-800">
       <div className="mb-4">
-        <h2 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
-          Articles
-        </h2>
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
+            Articles
+          </h2>
+          <Button size="icon" variant="ghost" asChild title="Data storage information">
+            <a href="/data-info">
+              <CircleHelp size={18} />
+            </a>
+          </Button>
+        </div>
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Manage your article canvas</p>
       </div>
       
