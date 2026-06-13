@@ -60,7 +60,7 @@ const Sidebar = ({ articles, onAddArticle, onDeleteArticle }: SidebarProps) => {
   return (
     <div className="w-full p-4 flex flex-col h-full bg-white dark:bg-zinc-800">
       <div className="mb-4">
-        <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-400 dark:to-indigo-400 bg-clip-text text-transparent">
+        <h2 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
           Articles
         </h2>
         <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Manage your canvas articles</p>
@@ -70,7 +70,7 @@ const Sidebar = ({ articles, onAddArticle, onDeleteArticle }: SidebarProps) => {
       {!isFormVisible ? (
         <Button 
           onClick={() => setIsFormVisible(true)} 
-          className="mb-4 w-full bg-gradient-to-r from-blue-500 to-indigo-500 hover:from-blue-600 hover:to-indigo-600"
+          className="mb-4 w-full bg-zinc-900 hover:bg-zinc-800 text-white dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-200"
         >
           <span className="mr-2">+</span> Add Article
         </Button>

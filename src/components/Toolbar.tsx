@@ -2,7 +2,7 @@
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { useTheme } from "@/contexts/ThemeContext";
-import { ChevronLeft, ChevronRight, Moon, Sun } from "lucide-react";
+import { ChevronLeft, ChevronRight, Circle, Diamond, Hand, Moon, Square, Sun } from "lucide-react";
 
 interface ToolbarProps {
   activeTool: "move" | "pan" | "highlight" | "note" | "select" | "container";
@@ -15,10 +15,10 @@ const Toolbar = ({ activeTool, onChangeTool, isSidebarOpen, onToggleSidebar }: T
   const { theme, toggleTheme } = useTheme();
 
   const tools = [
-    { id: "move" as const, label: "Move", description: "Drag articles" },
-    { id: "pan" as const, label: "Pan", description: "Navigate canvas" },
-    { id: "container" as const, label: "Container", description: "Group articles" },
-    { id: "note" as const, label: "Notes", description: "Add notes on canvas" },
+    { id: "move" as const, icon: Diamond, description: "Move tool" },
+    { id: "pan" as const, icon: Hand, description: "Pan tool" },
+    { id: "container" as const, icon: Square, description: "Container tool" },
+    { id: "note" as const, icon: Circle, description: "Notes tool" },
   ];
 
   return (
@@ -39,7 +39,7 @@ const Toolbar = ({ activeTool, onChangeTool, isSidebarOpen, onToggleSidebar }: T
         {tools.map(tool => (
           <Button
             key={tool.id}
-            size="sm"
+            size="icon"
             variant="outline"
             onClick={() => onChangeTool(tool.id)}
             className={`transition-colors font-medium tracking-tight dark:text-white ${
@@ -49,7 +49,7 @@ const Toolbar = ({ activeTool, onChangeTool, isSidebarOpen, onToggleSidebar }: T
             }`}
             title={tool.description}
           >
-            <span className="text-xs">{tool.label}</span>
+            <tool.icon size={16} />
           </Button>
         ))}
       </div>

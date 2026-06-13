@@ -1,28 +1,26 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Article, Tool, Container } from "@/types";
+import { Article, Tool, Container, CanvasNote } from "@/types";
 import ArticleCard from "./ArticleCard";
 
 interface CanvasWorkspaceProps {
   articles: Article[];
+  notes: CanvasNote[];
   onUpdateArticle: (article: Article) => void;
   onDeleteArticle: (id: string) => void;
+  onAddNote: (note: CanvasNote) => void;
+  onUpdateNote: (id: string, text: string) => void;
+  onDeleteNote: (id: string) => void;
   activeTool: Tool;
-}
-
-interface CanvasNote {
-  id: string;
-  text: string;
-  position: {
-    x: number;
-    y: number;
-  };
-  createdAt: number;
 }
 
 const CanvasWorkspace = ({
   articles,
+  notes,
   onUpdateArticle,
   onDeleteArticle,
+  onAddNote,
+  onUpdateNote,
+  onDeleteNote,
   activeTool
 }: CanvasWorkspaceProps) => {
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -31,7 +29,6 @@ const CanvasWorkspace = ({
   const [viewOffset, setViewOffset] = useState({ x: 0, y: 0 });
   const [zoomLevel, setZoomLevel] = useState(1);
   const [containers, setContainers] = useState<Container[]>([]);
-  const [notes, setNotes] = useState<CanvasNote[]>([]);
   const [draftContainer, setDraftContainer] = useState<Container | null>(null);
   const [isDrawingContainer, setIsDrawingContainer] = useState(false);
   const [drawStart, setDrawStart] = useState({ x: 0, y: 0 });
@@ -89,15 +86,12 @@ const CanvasWorkspace = ({
       if (rect) {
         const x = (e.clientX - rect.left - viewOffset.x) / zoomLevel;
         const y = (e.clientY - rect.top - viewOffset.y) / zoomLevel;
-        setNotes((prev) => [
-          ...prev,
-          {
-            id: `note_${Date.now()}`,
-            text: "",
-            position: { x, y },
-            createdAt: Date.now()
-          }
-        ]);
+        onAddNote({
+          id: `note_${Date.now()}`,
+          text: "",
+          position: { x, y },
+          createdAt: Date.now()
+        });
       }
     } else if (activeTool === "container") {
       e.preventDefault();
@@ -223,14 +217,6 @@ const CanvasWorkspace = ({
 
   const deleteContainer = (id: string) => {
     setContainers(prev => prev.filter(c => c.id !== id));
-  };
-
-  const updateNote = (id: string, text: string) => {
-    setNotes((prev) => prev.map((note) => (note.id === id ? { ...note, text } : note)));
-  };
-
-  const deleteNote = (id: string) => {
-    setNotes((prev) => prev.filter((note) => note.id !== id));
   };
 
   const gridSize = 24;
@@ -368,7 +354,7 @@ const CanvasWorkspace = ({
                 onMouseDown={(e) => e.stopPropagation()}
                 onClick={(e) => {
                   e.stopPropagation();
-                  deleteNote(note.id);
+                  onDeleteNote(note.id);
                 }}
                 className="text-amber-700 dark:text-amber-200 hover:text-red-600 dark:hover:text-red-300 text-xs"
                 aria-label="Delete note"
@@ -379,7 +365,7 @@ const CanvasWorkspace = ({
             <textarea
               value={note.text}
               onMouseDown={(e) => e.stopPropagation()}
-              onChange={(e) => updateNote(note.id, e.target.value)}
+              onChange={(e) => onUpdateNote(note.id, e.target.value)}
               placeholder="Write a note..."
               className="w-full h-24 resize-none bg-transparent text-sm text-amber-900 dark:text-amber-50 placeholder:text-amber-700 dark:placeholder:text-amber-200 outline-none"
             />

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import CanvasWorkspace from "@/components/CanvasWorkspace";
 import Sidebar from "@/components/Sidebar";
 import Toolbar from "@/components/Toolbar";
-import { Article } from "@/types";
+import { Article, CanvasNote } from "@/types";
 import { toast } from "@/components/ui/sonner";
 import { StorageManager } from "@/lib/storage";
 import { fetchArticleContent } from "@/lib/content-fetcher";
@@ -12,13 +12,15 @@ const Index = () => {
   const [activeTool, setActiveTool] = useState<"move" | "pan" | "highlight" | "note" | "select" | "container">("move");
   const [isLoading, setIsLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [canvasNotes, setCanvasNotes] = useState<CanvasNote[]>([]);
 
   // Load articles from localStorage on mount
   useEffect(() => {
     const loadArticles = () => {
       try {
         const saved = StorageManager.load();
-        setArticles(saved);
+        setArticles(saved.articles);
+        setCanvasNotes(saved.canvasNotes);
       } catch (error) {
         console.error("Failed to load articles:", error);
       } finally {
@@ -32,9 +34,9 @@ const Index = () => {
   // Save articles to localStorage whenever they change
   useEffect(() => {
     if (!isLoading) {
-      StorageManager.save(articles);
+      StorageManager.save(articles, canvasNotes);
     }
-  }, [articles, isLoading]);
+  }, [articles, canvasNotes, isLoading]);
 
   const addArticle = async (url: string) => {
     const newArticle: Article = {
@@ -138,8 +140,16 @@ const Index = () => {
         />
         <CanvasWorkspace
           articles={articles}
+          notes={canvasNotes}
           onUpdateArticle={updateArticle}
           onDeleteArticle={deleteArticle}
+          onAddNote={(note) => setCanvasNotes((prev) => [...prev, note])}
+          onUpdateNote={(id, text) =>
+            setCanvasNotes((prev) =>
+              prev.map((note) => (note.id === id ? { ...note, text } : note))
+            )
+          }
+          onDeleteNote={(id) => setCanvasNotes((prev) => prev.filter((note) => note.id !== id))}
           activeTool={activeTool}
         />
       </div>

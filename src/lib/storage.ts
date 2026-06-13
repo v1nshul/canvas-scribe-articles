@@ -1,4 +1,4 @@
-import { Article } from "@/types";
+import { Article, CanvasNote } from "@/types";
 
 const STORAGE_KEY = "canvas-scribe-articles";
 const STORAGE_VERSION = 1;
@@ -6,15 +6,17 @@ const STORAGE_VERSION = 1;
 export interface StorageData {
   version: number;
   articles: Article[];
+  canvasNotes: CanvasNote[];
   savedAt: string;
 }
 
 export const StorageManager = {
-  save: (articles: Article[]): boolean => {
+  save: (articles: Article[], canvasNotes: CanvasNote[]): boolean => {
     try {
       const data: StorageData = {
         version: STORAGE_VERSION,
         articles,
+        canvasNotes,
         savedAt: new Date().toISOString()
       };
       localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
@@ -25,22 +27,25 @@ export const StorageManager = {
     }
   },
 
-  load: (): Article[] => {
+  load: (): { articles: Article[]; canvasNotes: CanvasNote[] } => {
     try {
       const stored = localStorage.getItem(STORAGE_KEY);
-      if (!stored) return [];
+      if (!stored) return { articles: [], canvasNotes: [] };
 
-      const data: StorageData = JSON.parse(stored);
+      const data = JSON.parse(stored) as Partial<StorageData>;
       
       if (data.version !== STORAGE_VERSION) {
         console.warn("Storage version mismatch, starting fresh");
-        return [];
+        return { articles: [], canvasNotes: [] };
       }
 
-      return data.articles || [];
+      return {
+        articles: data.articles || [],
+        canvasNotes: data.canvasNotes || []
+      };
     } catch (error) {
       console.error("Failed to load from localStorage:", error);
-      return [];
+      return { articles: [], canvasNotes: [] };
     }
   },
 

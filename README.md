@@ -17,7 +17,7 @@ A modern multi-article canvas viewer that allows you to load, organize, and anno
   - **Move Tool**: Drag articles around the canvas
   - **Pan Tool**: Navigate the canvas with grab-and-drag
   - **Highlight Tool**: Mark important text (ready for future highlights UI)
-  - **Note Tool**: Add sticky notes for annotations (ready for future implementation)
+  - **Note Tool**: Add sticky notes on the canvas for annotations
   - **Select Tool**: For future interactive features
 - **Professional UI**: Modern gradient design with smooth animations and visual feedback
 - **Smart Content Extraction**: Uses multiple content selectors to find main article content
@@ -153,7 +153,7 @@ interface Article {
 
 ## Data Persistence
 
-All articles and their positions are automatically saved to browser localStorage under the key `canvas-scribe-articles`. Your work persists across browser sessions.
+All articles, their layout, and canvas notes are automatically saved to browser localStorage under the key `canvas-scribe-articles`. Your work persists across browser sessions on the same browser/device profile.
 
 ## CORS Handling
 

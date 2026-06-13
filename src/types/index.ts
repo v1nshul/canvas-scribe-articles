@@ -52,4 +52,14 @@ export interface Container {
   createdAt: number;
 }
 
+export interface CanvasNote {
+  id: string;
+  text: string;
+  position: {
+    x: number;
+    y: number;
+  };
+  createdAt: number;
+}
+
 export type Tool = "move" | "pan" | "highlight" | "note" | "select" | "container";
