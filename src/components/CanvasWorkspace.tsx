@@ -5,22 +5,30 @@ import ArticleCard from "./ArticleCard";
 interface CanvasWorkspaceProps {
   articles: Article[];
   notes: CanvasNote[];
+  containers: Container[];
   onUpdateArticle: (article: Article) => void;
   onDeleteArticle: (id: string) => void;
   onAddNote: (note: CanvasNote) => void;
   onUpdateNote: (id: string, text: string) => void;
   onDeleteNote: (id: string) => void;
+  onAddContainer: (container: Container) => void;
+  onUpdateContainerLabel: (id: string, label: string) => void;
+  onDeleteContainer: (id: string) => void;
   activeTool: Tool;
 }
 
 const CanvasWorkspace = ({
   articles,
   notes,
+  containers,
   onUpdateArticle,
   onDeleteArticle,
   onAddNote,
   onUpdateNote,
   onDeleteNote,
+  onAddContainer,
+  onUpdateContainerLabel,
+  onDeleteContainer,
   activeTool
 }: CanvasWorkspaceProps) => {
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -28,7 +36,6 @@ const CanvasWorkspace = ({
   const [panStart, setPanStart] = useState({ x: 0, y: 0 });
   const [viewOffset, setViewOffset] = useState({ x: 0, y: 0 });
   const [zoomLevel, setZoomLevel] = useState(1);
-  const [containers, setContainers] = useState<Container[]>([]);
   const [draftContainer, setDraftContainer] = useState<Container | null>(null);
   const [isDrawingContainer, setIsDrawingContainer] = useState(false);
   const [drawStart, setDrawStart] = useState({ x: 0, y: 0 });
@@ -192,7 +199,7 @@ const CanvasWorkspace = ({
             };
             setEditingContainerId(newContainer.id);
             setContainerLabel(newContainer.label);
-            setContainers(prev => [...prev, newContainer]);
+            onAddContainer(newContainer);
           }
         }
       }
@@ -207,17 +214,7 @@ const CanvasWorkspace = ({
       document.removeEventListener("mousemove", handleMouseMove);
       document.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isDrawingContainer, drawStart, viewOffset, zoomLevel]);
-
-  const updateContainerLabel = (id: string, label: string) => {
-    setContainers(prev =>
-      prev.map(c => (c.id === id ? { ...c, label } : c))
-    );
-  };
-
-  const deleteContainer = (id: string) => {
-    setContainers(prev => prev.filter(c => c.id !== id));
-  };
+  }, [isDrawingContainer, drawStart, viewOffset, zoomLevel, onAddContainer]);
 
   const gridSize = 24;
   const gridOffsetX = ((viewOffset.x % gridSize) + gridSize) % gridSize;
@@ -289,12 +286,12 @@ const CanvasWorkspace = ({
                   value={containerLabel}
                   onChange={(e) => setContainerLabel(e.target.value)}
                   onBlur={() => {
-                    updateContainerLabel(container.id, containerLabel);
+                    onUpdateContainerLabel(container.id, containerLabel);
                     setEditingContainerId(null);
                   }}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") {
-                      updateContainerLabel(container.id, containerLabel);
+                      onUpdateContainerLabel(container.id, containerLabel);
                       setEditingContainerId(null);
                     }
                   }}
@@ -312,7 +309,7 @@ const CanvasWorkspace = ({
                 </span>
               )}
               <button
-                onClick={() => deleteContainer(container.id)}
+                onClick={() => onDeleteContainer(container.id)}
                 className="text-blue-400 dark:text-blue-500 hover:text-red-500 dark:hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 ✕

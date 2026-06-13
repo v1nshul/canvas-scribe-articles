@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import CanvasWorkspace from "@/components/CanvasWorkspace";
 import Sidebar from "@/components/Sidebar";
 import Toolbar from "@/components/Toolbar";
-import { Article, CanvasNote } from "@/types";
+import { Article, CanvasNote, Container } from "@/types";
 import { toast } from "@/components/ui/sonner";
 import { StorageManager } from "@/lib/storage";
 import { fetchArticleContent } from "@/lib/content-fetcher";
@@ -13,6 +13,7 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [canvasNotes, setCanvasNotes] = useState<CanvasNote[]>([]);
+  const [containers, setContainers] = useState<Container[]>([]);
 
   // Load articles from localStorage on mount
   useEffect(() => {
@@ -21,6 +22,7 @@ const Index = () => {
         const saved = StorageManager.load();
         setArticles(saved.articles);
         setCanvasNotes(saved.canvasNotes);
+        setContainers(saved.containers);
       } catch (error) {
         console.error("Failed to load articles:", error);
       } finally {
@@ -34,9 +36,9 @@ const Index = () => {
   // Save articles to localStorage whenever they change
   useEffect(() => {
     if (!isLoading) {
-      StorageManager.save(articles, canvasNotes);
+      StorageManager.save(articles, canvasNotes, containers);
     }
-  }, [articles, canvasNotes, isLoading]);
+  }, [articles, canvasNotes, containers, isLoading]);
 
   const addArticle = async (url: string) => {
     const newArticle: Article = {
@@ -141,6 +143,7 @@ const Index = () => {
         <CanvasWorkspace
           articles={articles}
           notes={canvasNotes}
+          containers={containers}
           onUpdateArticle={updateArticle}
           onDeleteArticle={deleteArticle}
           onAddNote={(note) => setCanvasNotes((prev) => [...prev, note])}
@@ -150,6 +153,15 @@ const Index = () => {
             )
           }
           onDeleteNote={(id) => setCanvasNotes((prev) => prev.filter((note) => note.id !== id))}
+          onAddContainer={(container) => setContainers((prev) => [...prev, container])}
+          onUpdateContainerLabel={(id, label) =>
+            setContainers((prev) =>
+              prev.map((container) => (container.id === id ? { ...container, label } : container))
+            )
+          }
+          onDeleteContainer={(id) =>
+            setContainers((prev) => prev.filter((container) => container.id !== id))
+          }
           activeTool={activeTool}
         />
       </div>

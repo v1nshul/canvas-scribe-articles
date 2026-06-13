@@ -153,7 +153,7 @@ interface Article {
 
 ## Data Persistence
 
-All articles, their layout, and canvas notes are automatically saved to browser localStorage under the key `canvas-scribe-articles`. Your work persists across browser sessions on the same browser/device profile.
+All articles, containers, and canvas notes are automatically saved to browser localStorage under the key `canvas-scribe-articles`. Your work persists across browser sessions on the same browser/device profile.
 
 ## CORS Handling
 
