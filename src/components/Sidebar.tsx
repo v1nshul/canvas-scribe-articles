@@ -4,7 +4,7 @@ import { Article } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "@/components/ui/sonner";
-import { CircleHelp } from "lucide-react";
+import { CircleHelp, ExternalLink, Trash2 } from "lucide-react";
 
 interface SidebarProps {
   articles: Article[];
@@ -59,7 +59,7 @@ const Sidebar = ({ articles, onAddArticle, onDeleteArticle }: SidebarProps) => {
   };
 
   return (
-    <div className="w-full p-4 flex flex-col h-full bg-white dark:bg-zinc-800">
+    <div className="w-full p-4 flex flex-col h-full overflow-hidden bg-white dark:bg-zinc-800">
       <div className="mb-4">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-100 tracking-tight">
@@ -126,20 +126,20 @@ const Sidebar = ({ articles, onAddArticle, onDeleteArticle }: SidebarProps) => {
       )}
       
       {/* Article List */}
-      <div className="overflow-y-auto flex-1">
+      <div className="overflow-y-auto overflow-x-hidden flex-1">
         {articles.length === 0 ? (
           <div className="text-center text-gray-500 dark:text-gray-400 py-8">
             No articles added yet. Add an article to get started.
           </div>
         ) : (
-          <ul className="space-y-2">
+          <ul className="space-y-2 overflow-x-hidden">
             {articles.map((article) => (
               <li 
                 key={article.id}
-                className="p-3 border border-gray-200 dark:border-zinc-700 rounded-md hover:bg-gray-50 dark:hover:bg-zinc-700 dark:bg-zinc-900 transition-colors"
+                className="p-3 border border-gray-200 dark:border-zinc-700 rounded-md hover:bg-gray-50 dark:hover:bg-zinc-700 dark:bg-zinc-900 transition-colors overflow-hidden"
               >
-                <div className="flex justify-between items-start">
-                  <div className="flex-1 mr-2">
+                <div className="flex justify-between items-start gap-2 min-w-0">
+                  <div className="flex-1 min-w-0">
                     <h3 className="font-medium line-clamp-1 dark:text-gray-100" title={article.title}>
                       {article.isLoading ? "Loading..." : article.title}
                     </h3>
@@ -147,14 +147,14 @@ const Sidebar = ({ articles, onAddArticle, onDeleteArticle }: SidebarProps) => {
                       {article.url}
                     </p>
                   </div>
-                  <div className="flex space-x-1">
+                  <div className="flex space-x-1 shrink-0">
                     <Button 
                       size="icon" 
                       variant="ghost" 
                       className="h-6 w-6 dark:text-gray-400 dark:hover:text-white" 
                       onClick={() => window.open(article.url, "_blank")}
                     >
-                      <span className="text-sm">↗</span>
+                      <ExternalLink size={14} />
                     </Button>
                     <Button 
                       size="icon" 
@@ -162,7 +162,7 @@ const Sidebar = ({ articles, onAddArticle, onDeleteArticle }: SidebarProps) => {
                       className="h-6 w-6 text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300" 
                       onClick={() => onDeleteArticle(article.id)}
                     >
-                      <span className="text-sm">🗑</span>
+                      <Trash2 size={14} />
                     </Button>
                   </div>
                 </div>
