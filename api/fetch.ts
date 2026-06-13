@@ -1,36 +1,39 @@
-import { fetchArticleHtml, isAllowedUrl } from "../server/fetch-article";
+import { fetchArticleHtml, isAllowedUrl } from "./_lib/fetch-article";
 
-export const config = {
-  runtime: "edge",
+type VercelRequest = {
+  method?: string;
+  query?: Record<string, string | string[] | undefined>;
 };
 
-export default async function handler(request: Request): Promise<Response> {
-  if (request.method !== "GET") {
-    return Response.json({ error: "Method not allowed" }, { status: 405 });
+type VercelResponse = {
+  status: (code: number) => VercelResponse;
+  json: (body: unknown) => void;
+  send: (body: string) => void;
+  setHeader: (name: string, value: string) => void;
+};
+
+export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (req.method !== "GET") {
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
-  const { searchParams } = new URL(request.url);
-  const targetUrl = searchParams.get("url");
+  const targetUrl = typeof req.query.url === "string" ? req.query.url : undefined;
 
   if (!targetUrl) {
-    return Response.json({ error: "Missing url query parameter" }, { status: 400 });
+    return res.status(400).json({ error: "Missing url query parameter" });
   }
 
   if (!isAllowedUrl(targetUrl)) {
-    return Response.json({ error: "Invalid or disallowed URL" }, { status: 400 });
+    return res.status(400).json({ error: "Invalid or disallowed URL" });
   }
 
   const result = await fetchArticleHtml(targetUrl);
 
   if (!result.ok) {
-    return Response.json({ error: result.error }, { status: result.status });
+    return res.status(result.status).json({ error: result.error });
   }
 
-  return new Response(result.html, {
-    status: result.status,
-    headers: {
-      "Content-Type": "text/html; charset=utf-8",
-      "Cache-Control": "no-store",
-    },
-  });
+  res.setHeader("Content-Type", "text/html; charset=utf-8");
+  res.setHeader("Cache-Control", "no-store");
+  return res.status(result.status).send(result.html);
 }

@@ -1,5 +1,5 @@
 import type { Plugin } from "vite";
-import { fetchArticleHtml, isAllowedUrl } from "../server/fetch-article";
+import { fetchArticleHtml, isAllowedUrl } from "./api/_lib/fetch-article";
 
 export function fetchProxyPlugin(): Plugin {
   return {

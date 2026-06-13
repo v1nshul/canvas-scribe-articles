@@ -1,4 +1,4 @@
-import { fetchArticleHtml, isAllowedUrl } from "../server/fetch-article";
+import { fetchArticleHtml, isAllowedUrl } from "../../api/_lib/fetch-article";
 
 interface NetlifyEvent {
   httpMethod: string;
