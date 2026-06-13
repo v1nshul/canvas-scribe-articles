@@ -10,9 +10,11 @@ interface CanvasWorkspaceProps {
   onDeleteArticle: (id: string) => void;
   onAddNote: (note: CanvasNote) => void;
   onUpdateNote: (id: string, text: string) => void;
+  onMoveNote: (id: string, position: { x: number; y: number }) => void;
   onDeleteNote: (id: string) => void;
   onAddContainer: (container: Container) => void;
   onUpdateContainerLabel: (id: string, label: string) => void;
+  onMoveContainer: (id: string, position: { x: number; y: number }) => void;
   onDeleteContainer: (id: string) => void;
   activeTool: Tool;
 }
@@ -25,9 +27,11 @@ const CanvasWorkspace = ({
   onDeleteArticle,
   onAddNote,
   onUpdateNote,
+  onMoveNote,
   onDeleteNote,
   onAddContainer,
   onUpdateContainerLabel,
+  onMoveContainer,
   onDeleteContainer,
   activeTool
 }: CanvasWorkspaceProps) => {
@@ -41,6 +45,12 @@ const CanvasWorkspace = ({
   const [drawStart, setDrawStart] = useState({ x: 0, y: 0 });
   const [editingContainerId, setEditingContainerId] = useState<string | null>(null);
   const [containerLabel, setContainerLabel] = useState("");
+  const [dragState, setDragState] = useState<{
+    kind: "note" | "container";
+    id: string;
+    startClient: { x: number; y: number };
+    startPosition: { x: number; y: number };
+  } | null>(null);
 
   const handleZoom = useCallback((e: WheelEvent) => {
     if (!e.ctrlKey && !e.metaKey) return;
@@ -220,6 +230,36 @@ const CanvasWorkspace = ({
   const gridOffsetX = ((viewOffset.x % gridSize) + gridSize) % gridSize;
   const gridOffsetY = ((viewOffset.y % gridSize) + gridSize) % gridSize;
 
+  useEffect(() => {
+    if (!dragState) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      const dx = (e.clientX - dragState.startClient.x) / zoomLevel;
+      const dy = (e.clientY - dragState.startClient.y) / zoomLevel;
+      const newPosition = {
+        x: dragState.startPosition.x + dx,
+        y: dragState.startPosition.y + dy
+      };
+
+      if (dragState.kind === "note") {
+        onMoveNote(dragState.id, newPosition);
+      } else {
+        onMoveContainer(dragState.id, newPosition);
+      }
+    };
+
+    const handleMouseUp = () => {
+      setDragState(null);
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+    document.addEventListener("mouseup", handleMouseUp);
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+      document.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [dragState, zoomLevel, onMoveNote, onMoveContainer]);
+
   return (
     <div
       ref={canvasRef}
@@ -268,7 +308,22 @@ const CanvasWorkspace = ({
           <div
             key={container.id}
             data-canvas-item
-            className="absolute border-2 border-blue-400 dark:border-blue-500 rounded-lg pointer-events-auto group hover:shadow-lg transition-shadow"
+            className={`absolute border-2 border-blue-400 dark:border-blue-500 rounded-lg pointer-events-auto group hover:shadow-lg transition-shadow ${
+              activeTool === "move" ? "cursor-move" : ""
+            }`}
+            onMouseDown={(e) => {
+              if (activeTool !== "move") return;
+              const target = e.target as HTMLElement;
+              if (target.closest("input,button,textarea")) return;
+              e.preventDefault();
+              e.stopPropagation();
+              setDragState({
+                kind: "container",
+                id: container.id,
+                startClient: { x: e.clientX, y: e.clientY },
+                startPosition: { ...container.position }
+              });
+            }}
             style={{
               left: `${container.position.x}px`,
               top: `${container.position.y}px`,
@@ -300,6 +355,7 @@ const CanvasWorkspace = ({
               ) : (
                 <span
                   onClick={() => {
+                    if (activeTool === "move") return;
                     setEditingContainerId(container.id);
                     setContainerLabel(container.label);
                   }}
@@ -337,13 +393,30 @@ const CanvasWorkspace = ({
           <div
             key={note.id}
             data-note-ui
-            className="absolute pointer-events-auto bg-amber-100 dark:bg-amber-700 border border-amber-300 dark:border-amber-600 rounded-md shadow-md p-2 w-56"
+            className={`absolute pointer-events-auto bg-amber-100 dark:bg-amber-700 border border-amber-300 dark:border-amber-600 rounded-md shadow-md p-2 w-56 ${
+              activeTool === "move" ? "cursor-move" : ""
+            }`}
             style={{
               left: `${note.position.x}px`,
               top: `${note.position.y}px`,
               zIndex: 25
             }}
-            onMouseDown={(e) => e.stopPropagation()}
+            onMouseDown={(e) => {
+              if (activeTool !== "move") {
+                e.stopPropagation();
+                return;
+              }
+              const target = e.target as HTMLElement;
+              if (target.closest("button,textarea,input")) return;
+              e.preventDefault();
+              e.stopPropagation();
+              setDragState({
+                kind: "note",
+                id: note.id,
+                startClient: { x: e.clientX, y: e.clientY },
+                startPosition: { ...note.position }
+              });
+            }}
           >
             <div className="flex justify-end mb-1">
               <button

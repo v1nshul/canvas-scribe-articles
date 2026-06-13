@@ -152,11 +152,21 @@ const Index = () => {
               prev.map((note) => (note.id === id ? { ...note, text } : note))
             )
           }
+          onMoveNote={(id, position) =>
+            setCanvasNotes((prev) =>
+              prev.map((note) => (note.id === id ? { ...note, position } : note))
+            )
+          }
           onDeleteNote={(id) => setCanvasNotes((prev) => prev.filter((note) => note.id !== id))}
           onAddContainer={(container) => setContainers((prev) => [...prev, container])}
           onUpdateContainerLabel={(id, label) =>
             setContainers((prev) =>
               prev.map((container) => (container.id === id ? { ...container, label } : container))
+            )
+          }
+          onMoveContainer={(id, position) =>
+            setContainers((prev) =>
+              prev.map((container) => (container.id === id ? { ...container, position } : container))
             )
           }
           onDeleteContainer={(id) =>

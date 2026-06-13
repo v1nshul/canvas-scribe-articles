@@ -130,30 +130,27 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool, zoomLevel }: Art
       }}
     >
       <div
-        className="bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-700 dark:to-blue-800 px-4 py-3 flex items-center gap-2 cursor-move hover:from-blue-600 hover:to-blue-700 transition-all flex-shrink-0"
+        className="bg-zinc-100 dark:bg-zinc-800 border-b border-zinc-200 dark:border-zinc-700 px-3 py-2 flex items-center gap-2 cursor-move flex-shrink-0"
         onMouseDown={handleHeaderMouseDown}
       >
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm font-semibold text-white truncate" title={article.title}>
+          <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100 truncate" title={article.title}>
             {article.isLoading ? (
               <span className="flex items-center gap-2">
-                <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <span className="inline-block w-4 h-4 border-2 border-zinc-400 border-t-transparent rounded-full animate-spin" />
                 Loading...
               </span>
             ) : (
               article.title
             )}
           </h3>
-          <p className="text-xs text-blue-100 truncate" title={article.url}>
-            {article.url}
-          </p>
         </div>
         
         <div className="flex gap-1 flex-shrink-0">
           <Button
             size="icon"
             variant="ghost"
-            className="h-8 w-8 text-white hover:bg-white hover:bg-opacity-20"
+            className="h-7 w-7 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-200 dark:hover:bg-zinc-700"
             onClick={(e) => {
               e.stopPropagation();
               toggleMinimized();
@@ -165,7 +162,7 @@ const ArticleCard = ({ article, onUpdate, onDelete, activeTool, zoomLevel }: Art
           <Button
             size="icon"
             variant="ghost"
-            className="h-8 w-8 text-white hover:bg-red-500"
+            className="h-7 w-7 text-zinc-600 dark:text-zinc-300 hover:bg-red-100 dark:hover:bg-red-900/30 hover:text-red-600 dark:hover:text-red-400"
             onClick={(e) => {
               e.stopPropagation();
               onDelete(article.id);
