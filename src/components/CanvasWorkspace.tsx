@@ -97,7 +97,13 @@ const CanvasWorkspace = ({
       setIsPanning(true);
       setPanStart({ x: e.clientX, y: e.clientY });
     } else if (activeTool === "note") {
-      if (target.closest("[data-canvas-item]") || target.closest("[data-note-ui]")) return;
+      if (
+        target.closest("[data-note-ui]") ||
+        target.closest("[data-article-item]") ||
+        target.closest("[data-container-control]")
+      ) {
+        return;
+      }
       e.preventDefault();
       const rect = canvasRef.current?.getBoundingClientRect();
       if (rect) {
@@ -333,7 +339,10 @@ const CanvasWorkspace = ({
               zIndex: 5
             }}
           >
-            <div className="absolute top-2 left-2 right-2 flex justify-between items-center">
+            <div
+              data-container-control
+              className="absolute -top-8 left-0 right-0 flex justify-between items-center"
+            >
               {editingContainerId === container.id ? (
                 <input
                   autoFocus
@@ -350,7 +359,7 @@ const CanvasWorkspace = ({
                       setEditingContainerId(null);
                     }
                   }}
-                  className="bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100 text-xs px-2 py-1 rounded border border-blue-300 dark:border-blue-700 focus:outline-none"
+                  className="bg-blue-100 dark:bg-blue-900 text-blue-900 dark:text-blue-100 text-xs px-2 py-1 rounded border border-blue-300 dark:border-blue-700 focus:outline-none shadow-sm"
                 />
               ) : (
                 <span
@@ -359,7 +368,7 @@ const CanvasWorkspace = ({
                     setEditingContainerId(container.id);
                     setContainerLabel(container.label);
                   }}
-                  className="text-xs font-semibold text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900 px-2 py-1 rounded cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800"
+                  className="text-xs font-semibold text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-900 px-2 py-1 rounded cursor-pointer hover:bg-blue-200 dark:hover:bg-blue-800 shadow-sm"
                 >
                   {container.label}
                 </span>
@@ -443,7 +452,7 @@ const CanvasWorkspace = ({
         ))}
 
         {articles.map(article => (
-          <div key={article.id} data-canvas-item className="pointer-events-auto">
+          <div key={article.id} data-article-item className="pointer-events-auto">
             <ArticleCard
               article={article}
               onUpdate={onUpdateArticle}
