@@ -4,7 +4,7 @@ import path from "path";
 import { fetchProxyPlugin } from "./vite-plugin-fetch-proxy";
 
 // https://vitejs.dev/config/
-export default defineConfig(async ({ mode }) => ({
+export default defineConfig({
   server: {
     host: "::",
     port: 8080,
@@ -12,12 +12,10 @@ export default defineConfig(async ({ mode }) => ({
   plugins: [
     react(),
     fetchProxyPlugin(),
-    mode === "development" &&
-      (await import("lovable-tagger")).componentTagger(),
-  ].filter(Boolean),
+  ],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
-}));
+});
