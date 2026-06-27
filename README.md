@@ -1,4 +1,4 @@
-# Canvas Scribe Articles
+# Article Canvas
 
 A modern multi-article canvas viewer that allows you to load, organize, and annotate multiple web articles side-by-side on an infinite canvas.
 
