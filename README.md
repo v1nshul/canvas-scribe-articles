@@ -1,4 +1,4 @@
-# Canvas Scribe Articles
+# Article Canvas
 
 A modern multi-article canvas viewer that allows you to load, organize, and annotate multiple web articles side-by-side on an infinite canvas.
 
@@ -35,7 +35,7 @@ A modern multi-article canvas viewer that allows you to load, organize, and anno
 ## Getting Started
 
 ### Prerequisites
-- Node.js 16+ and npm installed
+- Node.js 20 and npm installed
 
 ### Installation & Development
 
@@ -60,6 +60,18 @@ npm run build
 # Preview the production build
 npm run preview
 ```
+
+## Pull Request Checks
+
+Pull requests targeting `main` run the following checks in GitHub Actions:
+
+- Clean dependency installation with `npm ci`
+- ESLint
+- TypeScript validation
+- Production build
+
+To enforce the pipeline before merging, add a branch protection rule for `main`
+and require the `Lint, typecheck, and build` status check.
 
 ## Usage Guide
 
